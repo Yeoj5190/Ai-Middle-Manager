@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Middle Manager — Full Product (Print)</title>
+<link rel="stylesheet" href="../shared/tokens.css" />
+<style>
+  html, body { margin: 0; background: #f4f4f5; }
+  #boot { position: fixed; inset: 0; display: grid; place-content: center; background: var(--bg); z-index: 200; color: var(--fg-3); font-family: var(--font-mono); font-size: 13px; }
+  #boot.hide { display: none; }
+
+  .deck { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 22px 0; }
+  .slide {
+    width: 1280px; height: 720px; flex: none; position: relative; overflow: hidden;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fit { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .fit > * { transform-origin: center center; flex: none; }
+
+  /* desktop app window inside a slide — natural height, scaled to fit by JS */
+  .appframe {
+    width: 1280px; display: flex; overflow: hidden; align-items: stretch;
+    background: var(--bg); border-radius: 4px;
+  }
+  .appframe main { flex: 1; overflow: visible; }
+  /* neutralise viewport-relative heights from master-detail views */
+  [style*="100vh - 140px"] { height: 640px !important; min-height: 0 !important; }
+
+  /* phones row */
+  .phones { display: flex; gap: 48px; align-items: flex-start; }
+  .phone-cap { text-align: center; margin-top: 16px; width: 390px; }
+  .amm-orb { animation: none !important; }
+
+  .slide-tag {
+    position: absolute; left: 18px; bottom: 14px; z-index: 6;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; color: var(--fg-4);
+  }
+  .slide-tagr {
+    position: absolute; right: 18px; bottom: 14px; z-index: 6;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; color: var(--fg-4);
+  }
+
+  @page { size: 1280px 720px; margin: 0; }
+
+  @media print {
+    html, body { background: #fff; }
+    #boot { display: none !important; }
+    .deck { gap: 0; padding: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .slide { border: none; border-radius: 0; break-after: page; break-inside: avoid; }
+    .slide:last-child { break-after: auto; }
+    *, *::before, *::after {
+      animation-delay: -99s !important; animation-duration: .001s !important;
+      animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+      animation-play-state: running !important; transition-duration: 0s !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="boot">Composing full product PDF…</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>document.documentElement.setAttribute('data-theme', 'light');</script>
+<script src="../desktop/data.js"></script>
+<script type="text/babel" src="../desktop/icons.jsx"></script>
+<script type="text/babel" src="../desktop/ui.jsx"></script>
+<script type="text/babel" src="../desktop/shell.jsx"></script>
+<script type="text/babel" src="../desktop/dashboard.jsx"></script>
+<script type="text/babel" src="../desktop/employees.jsx"></script>
+<script type="text/babel" src="../desktop/escalations.jsx"></script>
+<script type="text/babel" src="../desktop/tasks.jsx"></script>
+<script type="text/babel" src="../desktop/quality.jsx"></script>
+<script type="text/babel" src="../desktop/conversations.jsx"></script>
+<script type="text/babel" src="../desktop/sops.jsx"></script>
+<script type="text/babel" src="../desktop/analytics.jsx"></script>
+<script type="text/babel" src="../mobile/ios-frame.jsx"></script>
+<script type="text/babel" src="../mobile/screens.jsx"></script>
+<script type="text/babel" src="../mobile/manager.jsx"></script>
+<script type="text/babel">
+  const noop = () => {};
+
+  function Slide({ children, tag, tagr }) {
+    return (
+      <div className="slide">
+        <div className="fit">{children}</div>
+        {tag && <div className="slide-tag">{tag}</div>}
+        {tagr && <div className="slide-tagr">{tagr}</div>}
+      </div>
+    );
+  }
+
+  function AppShot({ view }) {
+    return (
+      <div className="appframe">
+        <Sidebar view={view} setView={noop} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--bg)' }}>
+          <Topbar view={view} theme="light" setTheme={noop} onAsk={noop} />
+          <main style={{ padding: '22px 26px' }}>
+            <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+              {VIEWS[view]}
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  const VIEWS = {
+    dashboard: <Dashboard setView={noop} />,
+    tasks: <Tasks />,
+    escalations: <Escalations />,
+    quality: <Quality />,
+    employees: <Employees setView={noop} />,
+    conversations: <Conversations />,
+    sops: <Sops />,
+    analytics: <Analytics setView={noop} />,
+  };
+
+  function MPhone({ children }) {
+    return (
+      <div style={{ width: 390, height: 844, flex: 'none' }}>
+        <IOSDevice dark={false} width={390} height={844}>
+          <div style={{ position: 'absolute', inset: 0, top: 50 }}>{children}</div>
+        </IOSDevice>
+      </div>
+    );
+  }
+  function Cap({ k, title, sub }) {
+    return (
+      <div className="phone-cap">
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '.08em' }}>{k}</div>
+        <div style={{ fontSize: 14, fontWeight: 560, marginTop: 5 }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{sub}</div>
+      </div>
+    );
+  }
+
+  function Cover() {
+    return (
+      <div className="slide">
+        <div className="grid-bg" style={{ position: 'absolute', inset: 0, opacity: .6, maskImage: 'radial-gradient(80% 70% at 50% 40%, black, transparent)' }} />
+        <div style={{ position: 'relative', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center', margin: '0 auto 28px' }}><I.logo size={36} /></div>
+          <h1 style={{ fontSize: 52, letterSpacing: '-.03em', lineHeight: 1.05 }}>AI Middle Manager</h1>
+          <p style={{ fontSize: 18, color: 'var(--fg-2)', marginTop: 16, maxWidth: 620, marginInline: 'auto', lineHeight: 1.5 }}>
+            The operating system for frontline operations — one manager supervising every location, powered by AI.
+          </p>
+          <div style={{ marginTop: 30, display: 'inline-flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['Desktop dashboard', 'Manager mobile', 'Employee app'].map((t) => (
+              <span key={t} className="chip" style={{ height: 30, fontSize: 12.5 }}>{t}</span>
+            ))}
+          </div>
+          <div className="mono" style={{ fontSize: 12, color: 'var(--fg-4)', marginTop: 34, letterSpacing: '.06em' }}>RESTHAUS OPERATIONS · 7 LOCATIONS · 26 STAFF</div>
+        </div>
+      </div>
+    );
+  }
+
+  const SECTIONS = [
+    { view: 'dashboard',     name: 'Executive Dashboard' },
+    { view: 'analytics',     name: 'Analytics & Insights' },
+    { view: 'escalations',   name: 'Escalation Center' },
+    { view: 'quality',       name: 'AI Quality Inspection' },
+    { view: 'conversations', name: 'AI Conversations' },
+    { view: 'employees',     name: 'Employees' },
+    { view: 'tasks',         name: 'Task Management' },
+    { view: 'sops',          name: 'SOP Knowledge Base' },
+  ];
+
+  const crit = window.AMM.escalations[0];
+
+  function Deck() {
+    return (
+      <div className="deck">
+        <Cover />
+        {SECTIONS.map((s, i) => (
+          <Slide key={s.view} tag={'DESKTOP · ' + s.name} tagr={String(i + 1).padStart(2, '0') + ' / ' + SECTIONS.length}>
+            <AppShot view={s.view} />
+          </Slide>
+        ))}
+
+        {/* manager mobile */}
+        <Slide tag="MANAGER · MOBILE">
+          <div className="phones">
+            <div><MPhone><ManagerApp /></MPhone><Cap k="01 · OVERVIEW" title="Operations briefing" sub="AI summary & live ops" /></div>
+            <div><MPhone><EscDetailM e={crit} /></MPhone><Cap k="02 · ESCALATION" title="Approve on the go" sub="Evidence & one-tap action" /></div>
+            <div><MPhone><AskM answered={true} /></MPhone><Cap k="03 · AI MANAGER" title="Ask anything" sub="Answers with next steps" /></div>
+          </div>
+        </Slide>
+
+        {/* employee mobile */}
+        <Slide tag="EMPLOYEE · MOBILE">
+          <div className="phones">
+            <div><MPhone><EmployeeApp /></MPhone><Cap k="01 · TODAY" title="Your shift" sub="Tasks, briefing & quick call" /></div>
+            <div><MPhone><CallScreen setTab={noop} /></MPhone><Cap k="02 · LIVE" title="Call the AI Manager" sub="Voice support, 24/7" /></div>
+            <div><MPhone><PhotoScreen /></MPhone><Cap k="03 · AI VISION" title="Photo quality check" sub="Instant AI inspection" /></div>
+          </div>
+        </Slide>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<Deck />);
+</script>
+<script type="text/babel">
+  (function () {
+    function fitAll() {
+      document.querySelectorAll('.fit').forEach(function (f) {
+        var inner = f.firstElementChild;
+        if (!inner) return;
+        inner.style.transform = 'none';
+        var w = inner.offsetWidth, h = inner.offsetHeight;
+        if (!w || !h) return;
+        var s = Math.min((1280 - 12) / w, (720 - 12) / h, 1);
+        inner.style.transform = 'scale(' + s + ')';
+      });
+    }
+    var t = setInterval(function () {
+      var r = document.getElementById('root');
+      if (r && r.querySelectorAll('.slide').length >= 11) {
+        clearInterval(t);
+        document.getElementById('boot').classList.add('hide');
+        var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+        fonts.then(function () {
+          setTimeout(function () {
+            fitAll();
+            setTimeout(function () { fitAll(); window.__ready = true; window.print(); }, 450);
+          }, 300);
+        });
+      }
+    }, 150);
+    setTimeout(function () { clearInterval(t); }, 15000);
+  })();
+</script>
+</body>
+</html>

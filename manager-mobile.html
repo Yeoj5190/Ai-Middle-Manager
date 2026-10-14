@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Middle Manager — Manager on Mobile</title>
+
+<!-- ============================================================
+     SELF-CONTAINED manager-mobile.html
+     The manager mobile showcase, bundled into one portable file.
+     Inlines (in dependency order): design tokens, the AMM mock data
+     model, the icon set, shared UI/chart primitives, the iOS device
+     frame, and the manager app components — then the showcase root.
+     React + Babel are still CDN-loaded (prototype approach); there are
+     no local sibling-file dependencies.
+     ============================================================ -->
+
+<style>
+/* ============================================================
+   AI MIDDLE MANAGER — Design System  (shared/tokens.css, inlined)
+   Monochrome / operational / premium. Dark + Light.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap');
+
+:root {
+  /* type */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* radius */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 11px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 999px;
+
+  /* spacing rhythm */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+
+  /* semantic status (functional only) */
+  --good: #34c98a;
+  --good-soft: color-mix(in oklab, var(--good) 16%, transparent);
+  --warn: #e8b341;
+  --warn-soft: color-mix(in oklab, var(--warn) 18%, transparent);
+  --crit: #f0696a;
+  --crit-soft: color-mix(in oklab, var(--crit) 16%, transparent);
+  --info: #6ea8fe;
+
+  /* accent — overridable via Tweaks. Monochrome default = foreground. */
+  --accent: var(--fg);
+  --accent-ink: var(--bg);          /* text on accent surfaces */
+  --accent-soft: color-mix(in oklab, var(--fg) 10%, transparent);
+
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+/* ---------------- DARK (default) ---------------- */
+:root, [data-theme="dark"] {
+  --bg:        #08080a;
+  --bg-2:      #0d0d10;
+  --surface:   #111114;
+  --surface-2: #17171b;
+  --elevated:  #1c1c21;
+  --hover:     rgba(255,255,255,.045);
+  --active:    rgba(255,255,255,.08);
+
+  --fg:        #f4f4f6;
+  --fg-2:      #adadb6;
+  --fg-3:      #74747e;
+  --fg-4:      #4a4a52;
+
+  --border:    rgba(255,255,255,.07);
+  --border-2:  rgba(255,255,255,.11);
+  --border-strong: rgba(255,255,255,.16);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 16px -4px rgba(0,0,0,.5);
+  --shadow-lg: 0 18px 50px -12px rgba(0,0,0,.7);
+  --grid-line: rgba(255,255,255,.05);
+  color-scheme: dark;
+}
+
+/* ---------------- LIGHT ---------------- */
+[data-theme="light"] {
+  --bg:        #f6f6f7;
+  --bg-2:      #fbfbfc;
+  --surface:   #ffffff;
+  --surface-2: #fcfcfd;
+  --elevated:  #ffffff;
+  --hover:     rgba(0,0,0,.035);
+  --active:    rgba(0,0,0,.06);
+
+  --fg:        #16161a;
+  --fg-2:      #5a5a64;
+  --fg-3:      #8e8e98;
+  --fg-4:      #b6b6be;
+
+  --border:    rgba(0,0,0,.085);
+  --border-2:  rgba(0,0,0,.12);
+  --border-strong: rgba(0,0,0,.18);
+
+  --shadow-sm: 0 1px 2px rgba(20,20,30,.06);
+  --shadow-md: 0 6px 20px -6px rgba(20,20,40,.12);
+  --shadow-lg: 0 24px 60px -16px rgba(20,20,50,.18);
+  --grid-line: rgba(0,0,0,.05);
+  color-scheme: light;
+}
+
+/* accent variants (applied to :root by Tweaks) */
+[data-accent="indigo"]  { --accent:#7c7bf0; --accent-ink:#0a0a12; --accent-soft:color-mix(in oklab,#7c7bf0 16%,transparent); }
+[data-accent="emerald"] { --accent:#34c98a; --accent-ink:#04130d; --accent-soft:color-mix(in oklab,#34c98a 16%,transparent); }
+[data-accent="blue"]    { --accent:#5b9bff; --accent-ink:#04101f; --accent-soft:color-mix(in oklab,#5b9bff 16%,transparent); }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv01","ss01";
+}
+::selection { background: color-mix(in oklab, var(--fg) 22%, transparent); }
+
+/* scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------- type helpers ---------------- */
+.mono { font-family: var(--font-mono); font-feature-settings: "tnum","zero"; }
+.tnum { font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-3); font-weight: 500;
+}
+h1,h2,h3,h4 { margin: 0; font-weight: 600; letter-spacing: -.018em; font-family: var(--font-display); }
+
+/* ---------------- primitives ---------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.divider { height: 1px; background: var(--border); border: 0; margin: 0; }
+
+.btn {
+  font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 13px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-2); background: var(--surface-2); color: var(--fg);
+  cursor: pointer; white-space: nowrap; transition: background .15s var(--ease), border-color .15s var(--ease), transform .05s;
+}
+.btn:hover { background: var(--hover); border-color: var(--border-strong); }
+.btn:active { transform: translateY(.5px); }
+.btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 540; }
+.btn-primary:hover { background: color-mix(in oklab, var(--fg) 88%, var(--bg)); border-color: transparent; }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--hover); border-color: transparent; }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.btn-icon { width: 34px; padding: 0; justify-content: center; }
+
+.chip {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 8px; border-radius: var(--r-full);
+  border: 1px solid var(--border); color: var(--fg-2); background: var(--surface-2);
+  letter-spacing: .01em;
+}
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip.good { color: var(--good); border-color: color-mix(in oklab,var(--good) 35%,transparent); background: var(--good-soft); }
+.chip.warn { color: var(--warn); border-color: color-mix(in oklab,var(--warn) 35%,transparent); background: var(--warn-soft); }
+.chip.crit { color: var(--crit); border-color: color-mix(in oklab,var(--crit) 35%,transparent); background: var(--crit-soft); }
+
+.tag {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--fg-3);
+  padding: 2px 7px; border: 1px solid var(--border); border-radius: var(--r-xs);
+}
+
+/* avatar (initials) */
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border-2);
+  font-family: var(--font-mono); font-weight: 500; color: var(--fg-2);
+  flex: none; overflow: hidden;
+}
+.avatar.online { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--good); }
+
+/* striped image placeholder */
+.ph {
+  position: relative; border-radius: var(--r-md); overflow: hidden;
+  background:
+    repeating-linear-gradient(135deg, var(--grid-line) 0 1px, transparent 1px 9px),
+    var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.ph span {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--fg-3); text-align: center; padding: 0 10px;
+}
+
+/* progress / meter */
+.meter { height: 6px; border-radius: 99px; background: var(--active); overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 99px; background: var(--fg); }
+
+/* focus ring */
+:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+
+/* entrance */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp .4s var(--ease) both; }
+
+.grid-bg {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ---------------- showcase page chrome ---------------- */
+html, body { height: 100%; }
+body { overflow-x: hidden; background:
+  radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--fg) 5%, var(--bg)), var(--bg) 60%),
+  var(--bg); }
+#boot { position: fixed; inset: 0; display: grid; place-content: center; background: var(--bg); z-index: 100; transition: opacity .4s; color: var(--fg-3); font-family: var(--font-mono); font-size: 13px; }
+#boot.hide { opacity: 0; pointer-events: none; }
+@keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+.amm-orb { animation: orbPulse 3.4s var(--ease) infinite; }
+@media (prefers-reduced-motion: reduce) { .amm-orb { animation: none; } }
+.phone-stage { display: flex; gap: 56px; align-items: flex-start; padding: 0 8px; }
+.phone-cap { text-align: center; margin-top: 20px; }
+.row-head { width: min(1180px, 92vw); margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+.row-head .ln { flex: 1; height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#08080a"/><g stroke="#f4f4f6" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="34" y="30" width="32" height="40" rx="7"/><path d="M42 44l8 8 8-8v16"/></g></svg>
+</template>
+<div id="boot">Loading manager app…</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('amm-mobile-theme') || 'dark');</script>
+
+<!-- ════════════ DATA LAYER (desktop/data.js, inlined) ════════════ -->
+<script>
+/* AI MIDDLE MANAGER — mock operational data (window.AMM) */
+(function () {
+  const locations = [
+    { id:'balan',  name:'Balan Village Motel', area:'Bowral',     staff:6, open:8,  quality:96, compliance:92, issues:1, trend:+4, lat:34 },
+    { id:'gran',   name:'Granville',           area:'Sydney',     staff:4, open:11, quality:84, compliance:79, issues:3, trend:-6, lat:60 },
+    { id:'grey',   name:'Greystanes',          area:'Sydney',     staff:5, open:5,  quality:93, compliance:95, issues:0, trend:+2, lat:55 },
+    { id:'lalor',  name:'Lalor Park',          area:'Sydney',     staff:3, open:6,  quality:90, compliance:88, issues:1, trend:+1, lat:50 },
+    { id:'alba',   name:'Albatross',           area:'Nowra',      staff:4, open:3,  quality:97, compliance:96, issues:0, trend:+3, lat:30 },
+    { id:'camb',   name:'171 Cambewarra',      area:'Nowra',      staff:2, open:4,  quality:88, compliance:91, issues:1, trend:0,  lat:28 },
+    { id:'monk',   name:'29 Monk St',          area:'Nowra',      staff:2, open:5,  quality:91, compliance:90, issues:0, trend:+2, lat:26 },
+  ];
+
+  const employees = [
+    { id:'bianca', name:'Bianca Reyes',   role:'Housekeeping Lead', loc:'Balan Village Motel', locId:'balan', status:'on-shift',
+      score:94, tasks:128, tasksWk:31, quality:97, sop:96, reliability:98, training:100, escalations:0, tenure:'2y 4m', shift:'06:00–14:00', channel:'Voice',
+      delta:+6, initials:'BR' },
+    { id:'marcus', name:'Marcus Hale',    role:'Maintenance Tech',  loc:'Granville', locId:'gran', status:'on-shift',
+      score:71, tasks:64, tasksWk:14, quality:78, sop:69, reliability:82, training:60, escalations:3, tenure:'7m', shift:'08:00–16:00', channel:'WhatsApp',
+      delta:-9, initials:'MH' },
+    { id:'aisha',  name:'Aisha Khan',     role:'Room Attendant',    loc:'Greystanes', locId:'grey', status:'on-shift',
+      score:89, tasks:103, tasksWk:26, quality:92, sop:94, reliability:90, training:100, escalations:0, tenure:'1y 2m', shift:'06:00–14:00', channel:'Telegram',
+      delta:+3, initials:'AK' },
+    { id:'diego',  name:'Diego Santos',   role:'Room Attendant',    loc:'Lalor Park', locId:'lalor', status:'off-shift',
+      score:82, tasks:77, tasksWk:18, quality:85, sop:83, reliability:86, training:80, escalations:1, tenure:'10m', shift:'14:00–22:00', channel:'SMS',
+      delta:+1, initials:'DS' },
+    { id:'lena',   name:'Lena Petrov',    role:'Housekeeping',      loc:'Albatross', locId:'alba', status:'on-shift',
+      score:91, tasks:96, tasksWk:24, quality:95, sop:92, reliability:93, training:100, escalations:0, tenure:'1y 8m', shift:'07:00–15:00', channel:'Voice',
+      delta:+4, initials:'LP' },
+    { id:'tomas',  name:'Tomas Nguyen',   role:'Maintenance Tech',  loc:'29 Monk St', locId:'monk', status:'on-shift',
+      score:86, tasks:71, tasksWk:19, quality:88, sop:87, reliability:84, training:90, escalations:1, tenure:'1y', shift:'08:00–16:00', channel:'Telegram',
+      delta:+2, initials:'TN' },
+    { id:'priya',  name:'Priya Sharma',   role:'Room Attendant',    loc:'171 Cambewarra', locId:'camb', status:'off-shift',
+      score:88, tasks:84, tasksWk:21, quality:90, sop:89, reliability:88, training:100, escalations:0, tenure:'1y 5m', shift:'06:00–14:00', channel:'WhatsApp',
+      delta:+5, initials:'PS' },
+    { id:'jamal',  name:'Jamal Osei',     role:'Housekeeping',      loc:'Granville', locId:'gran', status:'on-shift',
+      score:76, tasks:58, tasksWk:15, quality:80, sop:74, reliability:79, training:70, escalations:2, tenure:'5m', shift:'06:00–14:00', channel:'SMS',
+      delta:-3, initials:'JO' },
+  ];
+
+  const tasks = [
+    { id:'T-4821', title:'Deep clean rooms 12–18', loc:'Balan Village Motel', assignee:'Bianca Reyes', priority:'med',  status:'in-progress', due:'Today 14:00', source:'Recurring SOP' },
+    { id:'T-4822', title:'Repair HVAC unit — Room 4', loc:'Granville', assignee:'Marcus Hale', priority:'high', status:'overdue', due:'Today 10:00', source:'Escalation' },
+    { id:'T-4823', title:'Restock amenities — all floors', loc:'Greystanes', assignee:'Aisha Khan', priority:'low', status:'in-progress', due:'Today 16:00', source:'Recurring SOP' },
+    { id:'T-4824', title:'Inspect & photo-verify rooms 1–6', loc:'Albatross', assignee:'Lena Petrov', priority:'med', status:'review', due:'Today 12:30', source:'AI generated' },
+    { id:'T-4825', title:'Replace smoke detector batteries', loc:'29 Monk St', assignee:'Tomas Nguyen', priority:'high', status:'todo', due:'Today 15:00', source:'Compliance' },
+    { id:'T-4826', title:'Linen handover & count', loc:'Lalor Park', assignee:'Diego Santos', priority:'low', status:'done', due:'Today 09:00', source:'Recurring SOP' },
+    { id:'T-4827', title:'Pool chemical check & log', loc:'Balan Village Motel', assignee:'Bianca Reyes', priority:'med', status:'todo', due:'Today 17:00', source:'Compliance' },
+    { id:'T-4828', title:'Guest complaint follow-up — Rm 9', loc:'Granville', assignee:'Jamal Osei', priority:'high', status:'in-progress', due:'Today 13:00', source:'Escalation' },
+  ];
+
+  const escalations = [
+    { id:'E-318', sev:'critical', title:'HVAC failure — Granville Room 4', loc:'Granville', when:'24m ago',
+      summary:'Marcus reported the HVAC unit in Room 4 is non-operational. Guest checking in at 15:00. AI verified via photo: condenser fan not spinning, error code E2.',
+      action:'Dispatch backup unit from Greystanes + reassign guest to Room 7.', evidence:'2 photos · 1 voice note', owner:'Marcus Hale' },
+    { id:'E-317', sev:'high', title:'Failed room inspection — Granville Rm 12', loc:'Granville', when:'1h ago',
+      summary:'AI quality check failed 2 of 8 criteria: blanket not centred, bathroom mirror streaked. Re-clean required before guest arrival.',
+      action:'Reassign re-clean to Jamal Osei; re-verify by 13:30.', evidence:'4 photos', owner:'Jamal Osei' },
+    { id:'E-316', sev:'high', title:'SOP not followed — chemical logging', loc:'Granville', when:'2h ago',
+      summary:'Pool chemical log missed for 2 consecutive days at Granville. Compliance risk flagged by AI monitor.',
+      action:'AI sent SOP refresher to on-shift staff; manager sign-off needed.', evidence:'Compliance log', owner:'Marcus Hale' },
+    { id:'E-315', sev:'med', title:'Late shift start', loc:'Granville', when:'3h ago',
+      summary:'Jamal started 22 minutes late. Third occurrence this fortnight. AI logged and scheduled a coaching check-in.',
+      action:'Review reliability trend; AI coaching scheduled for tomorrow.', evidence:'Shift log', owner:'Jamal Osei' },
+  ];
+
+  const conversations = [
+    { id:'C-901', emp:'Bianca Reyes', initials:'BR', channel:'Voice', when:'08:42', dur:'2m 14s', topic:'SOP question — stain removal',
+      summary:'Bianca asked the correct procedure for a red wine stain on carpet. AI walked through the 4-step SOP and confirmed the approved solvent. No escalation needed.',
+      actions:['Linked SOP-014 Carpet Care','Logged as resolved'], sentiment:'positive',
+      transcript:[
+        {who:'emp', t:'Hey, room 14 has a red wine stain on the carpet, what do I use?'},
+        {who:'ai', t:'Use the enzyme solvent from your cart — SOP-014. Blot, don’t rub. Want me to walk you through it?'},
+        {who:'emp', t:'Yes please.'},
+        {who:'ai', t:'Step 1: blot excess with a dry cloth. Step 2: apply solvent, wait 90 seconds. Step 3: blot outward from the edge. Step 4: photo it when done and I’ll verify.'},
+        {who:'emp', t:'Done, sending photo now.'},
+        {who:'ai', t:'Looks clean — approved. Nice work. Logged and closed.'},
+      ]},
+    { id:'C-902', emp:'Marcus Hale', initials:'MH', channel:'WhatsApp', when:'09:18', dur:'—', topic:'HVAC escalation', escalated:true,
+      summary:'Marcus reported Room 4 HVAC failure. AI requested a photo, identified error code E2, classified as critical and escalated to manager with a recommended action.',
+      actions:['Created escalation E-318','Requested photo evidence','Notified manager'], sentiment:'urgent',
+      transcript:[
+        {who:'emp', t:'Room 4 aircon is dead, not turning on at all'},
+        {who:'ai', t:'Can you send a photo of the unit and the display panel?'},
+        {who:'emp', t:'[photo]'},
+        {who:'ai', t:'I see error code E2 and the condenser fan isn’t spinning. This is a unit fault, not a reset. Escalating now — guest arrives 15:00.'},
+        {who:'ai', t:'Manager notified. Recommended: pull the backup unit from Greystanes. I’ll reassign the guest to Room 7 as a fallback.'},
+      ]},
+    { id:'C-903', emp:'Aisha Khan', initials:'AK', channel:'Telegram', when:'07:55', dur:'—', topic:'Training completion',
+      summary:'Aisha completed the updated bathroom cleaning module. AI confirmed the quiz score and unlocked her next checklist.',
+      actions:['Marked SOP-021 training complete','Quiz 9/10'], sentiment:'positive',
+      transcript:[
+        {who:'ai', t:'Morning Aisha — you’ve got the updated bathroom SOP video queued. 4 min. Want it now?'},
+        {who:'emp', t:'yep watching'},
+        {who:'emp', t:'done, took the quiz'},
+        {who:'ai', t:'9 out of 10 — passed. Your rooms today will use the new checklist. Good luck!'},
+      ]},
+    { id:'C-904', emp:'Diego Santos', initials:'DS', channel:'SMS', when:'Yesterday', dur:'—', topic:'Schedule swap request',
+      summary:'Diego requested to swap Friday’s shift. AI checked coverage, found Priya available, and proposed the swap pending manager approval.',
+      actions:['Proposed swap with Priya','Pending approval'], sentiment:'neutral',
+      transcript:[
+        {who:'emp', t:'can i swap my friday shift?'},
+        {who:'ai', t:'Checking coverage… Priya is available Friday and you’re free Sunday. Want me to propose that swap to the manager?'},
+        {who:'emp', t:'yes thanks'},
+        {who:'ai', t:'Sent for approval. I’ll text you the moment it’s confirmed.'},
+      ]},
+  ];
+
+  const sops = [
+    { id:'SOP-001', title:'Standard Room Turnover', cat:'Housekeeping', type:'Checklist', steps:14, usage:412, success:94, questions:8, incidents:1, updated:'3d ago' },
+    { id:'SOP-014', title:'Carpet & Upholstery Care', cat:'Housekeeping', type:'Document', steps:9, usage:96, success:91, questions:12, incidents:0, updated:'1w ago' },
+    { id:'SOP-021', title:'Bathroom Deep Clean', cat:'Housekeeping', type:'Video', steps:11, usage:288, success:97, questions:4, incidents:0, updated:'2d ago', highlight:true },
+    { id:'SOP-033', title:'Pool Chemical Logging', cat:'Compliance', type:'Checklist', steps:6, usage:140, success:82, questions:6, incidents:2, updated:'5d ago', risk:true },
+    { id:'SOP-040', title:'HVAC Fault Triage', cat:'Maintenance', type:'Document', steps:8, usage:54, success:88, questions:9, incidents:3, updated:'4d ago' },
+    { id:'SOP-052', title:'Fire & Safety Inspection', cat:'Compliance', type:'Checklist', steps:18, usage:72, success:96, questions:2, incidents:0, updated:'1w ago' },
+  ];
+
+  const inspection = {
+    id:'QI-2207', room:'Room 14', loc:'Balan Village Motel', employee:'Bianca Reyes', initials:'BR',
+    type:'Bed Making', when:'11:24', confidence:91, result:'needs-revision',
+    checks:[
+      { label:'Bed aligned to frame', pass:true },
+      { label:'Sheets tucked (hospital corners)', pass:true },
+      { label:'Pillows positioned & plumped', pass:true },
+      { label:'Top sheet fold even', pass:true },
+      { label:'Blanket centred', pass:false, note:'Offset ~6cm to the left of centre.' },
+      { label:'No visible creases', pass:true },
+    ],
+    aiNote:'Strong turnover overall. One correction needed: the blanket is offset left of centre. Re-centre and re-submit — estimated 30 seconds.'
+  };
+
+  // analytics series (12 weeks)
+  const weeks = Array.from({length:12}, (_,i)=>`W${i+1}`);
+  const analytics = {
+    weeks,
+    compliance:   [81,83,82,85,84,86,88,87,89,90,91,92],
+    completion:   [72,75,74,78,80,79,83,85,84,88,90,91],
+    failures:     [14,13,15,11,12,10,9,8,7,6,6,5],
+    trainingLift: [{label:'Watched updated SOP', val:37, sub:'fewer inspection failures'},
+                   {label:'Avg task quality', val:92, sub:'across 7 locations'},
+                   {label:'On-time completion', val:91, sub:'+12 pts vs Q1'}],
+    byLocation: locations.map(l=>({ name:l.name, quality:l.quality, compliance:l.compliance })),
+  };
+
+  const insights = [
+    { sev:'crit', text:'Room inspections at Granville dropped 18% this week and 3 SOP violations were logged.', action:'Open Granville' },
+    { sev:'good', text:'Bianca has completed 40% more tasks than the team average with a 97% quality score.', action:'View Bianca' },
+    { sev:'warn', text:'Maintenance issues at Granville increased — 3 open escalations vs 0 last week.', action:'View escalations' },
+    { sev:'good', text:'Employees who watched the updated cleaning SOP reduced inspection failures by 37%.', action:'View analytics' },
+  ];
+
+  const briefing = {
+    greeting:'Good morning, John.',
+    body:'Operations across all 7 locations are running smoothly. 42 tasks completed today and 5 require your review. 2 employees need follow-up and 1 maintenance issue at Granville requires escalation.',
+    stamp:'Generated 08:46 · covers 7 locations · 26 staff on shift',
+  };
+
+  const stats = [
+    { id:'active',    label:'Active Employees',    value:'18', sub:'of 26 on shift', delta:'+2', dir:'up',   spark:[10,12,11,14,13,16,18] },
+    { id:'open',      label:'Open Tasks',          value:'42', sub:'8 due within 2h', delta:'-5', dir:'down', spark:[55,52,49,47,45,44,42], invert:true },
+    { id:'done',      label:'Completed Today',     value:'42', sub:'vs 38 avg',       delta:'+11%', dir:'up', spark:[20,26,30,33,37,40,42] },
+    { id:'esc',       label:'Escalations',         value:'4',  sub:'1 critical',      delta:'+1', dir:'up',   spark:[2,3,2,3,3,4,4], invert:true },
+    { id:'comp',      label:'Compliance Score',    value:'92%',sub:'+3 pts this wk',  delta:'+3', dir:'up',   spark:[86,87,88,89,90,91,92] },
+    { id:'qual',      label:'Avg Task Quality',    value:'92%',sub:'7-day average',   delta:'+1', dir:'up',   spark:[88,89,89,90,91,91,92] },
+  ];
+
+  // ───── AI Training Quiz ─────
+  const quiz = {
+    sop:'Bathroom Deep Clean v2', sopId:'SOP-021', module:'SOP-021 · 4:12 video',
+    intro:"Before you continue, I'll ask a few quick questions to make sure you understand the process. It takes about a minute.",
+    questions:[
+      { id:1, type:'choice', topic:'Chemical dwell time',
+        q:'How long must the disinfectant sit on bathroom surfaces before you wipe it off?',
+        options:['30 seconds','2 minutes','10 minutes','No wait needed'], answer:1,
+        explain:'Correct — surfaces need a full 2 minutes of contact time for the disinfectant to kill pathogens.',
+        explainWrong:'Not quite. The disinfectant needs a full 2 minutes of contact time — wiping early leaves surfaces unsanitised.' },
+      { id:2, type:'choice', topic:'Colour-coded cloths',
+        q:'Which colour cloth is used for the toilet zone to prevent cross-contamination?',
+        options:['Blue','Green','Red','Yellow'], answer:2,
+        explain:'Right — red is the toilet-zone cloth. Colour coding stops germs moving between zones.',
+        explainWrong:'Red is the toilet-zone cloth. Using another colour risks cross-contamination between zones.' },
+      { id:3, type:'text', topic:'Cleaning order',
+        q:'In what order do you clean the bathroom — cleanest first, or dirtiest first?',
+        accept:['cleanest','clean to dirty','clean first','top down','high to low'], sample:'Cleanest to dirtiest',
+        explain:'Exactly — always work cleanest → dirtiest (mirror, sink, bath, then toilet & floor) so you never spread grime onto clean surfaces.',
+        explainWrong:'Remember: work cleanest → dirtiest (mirror, sink, bath, then toilet & floor) so you don’t spread grime.' },
+      { id:4, type:'choice', topic:'Bowl chemical',
+        q:'After applying chemical to the toilet bowl, what should you do next?',
+        options:['Flush it immediately','Let it dwell while you clean other areas','Scrub straight away'], answer:1,
+        explain:'Correct — let it dwell while you clean elsewhere, then return to scrub. That gives the chemical time to break down stains.',
+        explainWrong:'Let it dwell while you clean other areas first — that gives the chemical time to work before you scrub.' },
+      { id:5, type:'choice', topic:'PPE',
+        q:'What PPE is required when handling the bathroom disinfectant concentrate?',
+        options:['No PPE needed','Nitrile gloves','Gloves and safety goggles'], answer:1,
+        explain:'Correct — nitrile gloves protect your skin from the concentrate.',
+        explainWrong:'Nitrile gloves are required to protect your skin from the disinfectant concentrate.' },
+    ],
+  };
+
+  const quizRecords = [
+    { id:'bianca', emp:'Bianca Reyes', initials:'BR', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', score:4, total:5, knowledge:88, status:'pass', when:'2d ago', missed:['Chemical dwell time'], trend:[74,80,85,88], attempts:1, rec:'Send refresher video and re-quiz tomorrow' },
+    { id:'aisha',  emp:'Aisha Khan',   initials:'AK', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', score:5, total:5, knowledge:96, status:'pass', when:'1d ago', missed:[], trend:[88,90,93,96], attempts:1, rec:'Cleared — no action needed' },
+    { id:'marcus', emp:'Marcus Hale',  initials:'MH', sop:'HVAC Fault Triage', sopId:'SOP-040', score:2, total:5, knowledge:48, status:'needs-review', when:'5h ago', missed:['Error-code lookup','Isolation procedure','Refrigerant safety'], trend:[62,58,52,48], attempts:2, rec:'Mandatory retraining before next maintenance task' },
+    { id:'jamal',  emp:'Jamal Osei',   initials:'JO', sop:'Pool Chemical Logging', sopId:'SOP-033', score:3, total:5, knowledge:64, status:'needs-review', when:'1d ago', missed:['Dosage ratio','Log frequency'], trend:[70,68,66,64], attempts:1, rec:'Re-quiz tomorrow after refresher' },
+    { id:'diego',  emp:'Diego Santos', initials:'DS', sop:'Standard Room Turnover', sopId:'SOP-001', score:4, total:5, knowledge:83, status:'pass', when:'3d ago', missed:['Linen count'], trend:[78,80,81,83], attempts:1, rec:'On track' },
+    { id:'lena',   emp:'Lena Petrov',  initials:'LP', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', score:5, total:5, knowledge:94, status:'pass', when:'2d ago', missed:[], trend:[89,91,92,94], attempts:1, rec:'Cleared' },
+    { id:'tomas',  emp:'Tomas Nguyen', initials:'TN', sop:'Fire & Safety Inspection', sopId:'SOP-052', score:4, total:5, knowledge:85, status:'pass', when:'4d ago', missed:['Extinguisher classes'], trend:[80,82,84,85], attempts:1, rec:'On track' },
+    { id:'priya',  emp:'Priya Sharma', initials:'PS', sop:'Carpet & Upholstery Care', sopId:'SOP-014', score:5, total:5, knowledge:91, status:'pass', when:'2d ago', missed:[], trend:[86,88,90,91], attempts:1, rec:'Cleared' },
+  ];
+
+  const retention = {
+    avgKnowledge:81, quizzesToday:14, passRate:84, needRetraining:2,
+    trend:[72,74,73,76,78,79,80,81],
+    bySop:[
+      { sop:'Bathroom Deep Clean v2', id:'SOP-021', retention:93, quizzed:18 },
+      { sop:'Standard Room Turnover', id:'SOP-001', retention:88, quizzed:24 },
+      { sop:'Fire & Safety Inspection', id:'SOP-052', retention:86, quizzed:9 },
+      { sop:'Carpet & Upholstery Care', id:'SOP-014', retention:84, quizzed:7 },
+      { sop:'Pool Chemical Logging', id:'SOP-033', retention:66, quizzed:11 },
+      { sop:'HVAC Fault Triage', id:'SOP-040', retention:58, quizzed:6 },
+    ],
+  };
+
+  // ───── AI Knowledge Verification Calls ─────
+  // adaptive verbal competency check — runs AFTER the quiz
+  const verificationScript = {
+    sop:'Bathroom Deep Clean v2', sopId:'SOP-021', emp:'Bianca Reyes', initials:'BR',
+    turns:[
+      { who:'ai', t:"Hi Bianca — before you clean bathrooms independently, I want to quickly check your understanding. Just answer naturally, like we're talking." },
+      { who:'ai', t:"First one — why do we wait before wiping disinfectant off a surface?", tag:'Question 1 · Dwell time' },
+      { who:'emp', t:"Um… so it can clean properly?", confidence:0.5, quality:'partial', hesitation:true },
+      { who:'ai', t:"Close, but be specific for me. It's about contact time — how long does it need to sit, and what's it actually doing in that time?", kind:'challenge' },
+      { who:'emp', t:"I think… thirty seconds? To get the dirt off?", confidence:0.35, quality:'weak', hesitation:true },
+      { who:'ai', t:"Not quite — and this one matters for guest safety. It needs a full two minutes of contact time to kill pathogens, not just lift dirt. Wiping early leaves the surface unsanitised. Say it back to me — how long, and why?", kind:'coach' },
+      { who:'emp', t:"Two minutes — so it actually kills the germs, not just cleans the dirt.", confidence:0.82, quality:'strong', hesitation:false },
+      { who:'ai', t:"Exactly. Good. You've got it now. Since you recovered well, let's step it up — what's the correct order for cleaning the bathroom, and why that order?", kind:'advance', tag:'Question 2 · Cleaning order' },
+      { who:'emp', t:"Cleanest to dirtiest — mirror, sink, bath, then toilet and floor, so I don't drag germs onto clean surfaces.", confidence:0.9, quality:'strong', hesitation:false },
+      { who:'ai', t:"Spot on. Last one — if your gloves are missing or torn before you start, what do you do?", kind:'advance', tag:'Question 3 · PPE' },
+      { who:'emp', t:"Stop, don't touch the chemical, and get a fresh pair before I do anything.", confidence:0.88, quality:'strong', hesitation:false },
+      { who:'ai', t:"That's right. You stumbled on dwell time at first but corrected it well once we talked it through. I'm clearing you to work independently — and I'll re-check that dwell-time step with you tomorrow to lock it in.", kind:'verdict' },
+    ],
+    verdict:{ knowledge:86, confidence:78, readiness:'ready', note:'Cleared to work independently. Re-check chemical dwell time tomorrow.' },
+  };
+
+  const verificationCalls = [
+    { id:'bianca', emp:'Bianca Reyes', initials:'BR', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', when:'Today 09:10', dur:'3m 12s',
+      knowledge:86, confidence:78, readiness:'ready', trend:[70,75,80,86], follow:1,
+      flags:['Recovered after coaching on dwell time'], summary:'Strong overall. Hesitated on chemical dwell time, recovered fully after coaching. Cleared with a 1-day follow-up.' },
+    { id:'aisha', emp:'Aisha Khan', initials:'AK', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', when:'1d ago', dur:'2m 02s',
+      knowledge:96, confidence:94, readiness:'ready', trend:[88,90,94,96], follow:0,
+      flags:['Confident throughout — passed advanced questions'], summary:'Confident and precise on every question. AI escalated to advanced operational scenarios, all passed. Ready.' },
+    { id:'marcus', emp:'Marcus Hale', initials:'MH', sop:'HVAC Fault Triage', sopId:'SOP-040', when:'5h ago', dur:'4m 40s',
+      knowledge:52, confidence:38, readiness:'not-ready', trend:[60,55,52,52], follow:0,
+      flags:['Failed isolation procedure twice','Long hesitation on refrigerant safety','Manager alerted'], summary:'Could not describe the isolation procedure after two prompts and was unsure on refrigerant safety. Not ready — retraining required, manager alerted.' },
+    { id:'jamal', emp:'Jamal Osei', initials:'JO', sop:'Pool Chemical Logging', sopId:'SOP-033', when:'1d ago', dur:'3m 30s',
+      knowledge:64, confidence:58, readiness:'borderline', trend:[60,62,61,64], follow:1,
+      flags:['Unsure on dosage ratio'], summary:'Knew logging frequency but hesitated on the dosage ratio. Borderline — AI scheduled a refresher and re-check.' },
+    { id:'diego', emp:'Diego Santos', initials:'DS', sop:'Standard Room Turnover', sopId:'SOP-001', when:'3d ago', dur:'2m 30s',
+      knowledge:84, confidence:80, readiness:'ready', trend:[76,78,82,84], follow:0,
+      flags:['Solid, steady answers'], summary:'Steady and accurate across all questions. Ready to work independently.' },
+    { id:'lena', emp:'Lena Petrov', initials:'LP', sop:'Bathroom Deep Clean v2', sopId:'SOP-021', when:'2d ago', dur:'2m 18s',
+      knowledge:92, confidence:90, readiness:'ready', trend:[86,88,90,92], follow:0,
+      flags:['Clear, confident answers'], summary:'Clear and confident throughout. Ready.' },
+  ];
+
+  const verification = {
+    callsToday:6, readyRate:67, notReady:1, avgConfidence:73,
+    trend:[62,64,66,68,72,74,77,80],
+    script:verificationScript,
+  };
+
+  window.AMM = { locations, employees, tasks, escalations, conversations, sops, inspection, analytics, insights, briefing, stats, quiz, quizRecords, retention, verificationScript, verificationCalls, verification };
+})();
+</script>
+
+<!-- ════════════ ICON SET (desktop/icons.jsx, inlined) ════════════ -->
+<script type="text/babel">
+/* AI MIDDLE MANAGER — icon set (simple line icons) */
+const Icon = ({ d, paths, size = 18, sw = 1.6, fill, style, children }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill || 'none'}
+       stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"
+       style={{ flex: 'none', ...style }} aria-hidden="true">
+    {d && <path d={d} />}
+    {paths && paths.map((p, i) => <path key={i} d={p} />)}
+    {children}
+  </svg>
+);
+
+const I = {
+  spark:  (p) => <Icon {...p} paths={['M12 3v4','M12 17v4','M3 12h4','M17 12h4','M5.6 5.6l2.8 2.8','M15.6 15.6l2.8 2.8','M18.4 5.6l-2.8 2.8','M8.4 15.6l-2.8 2.8']} />,
+  grid:   (p) => <Icon {...p}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></Icon>,
+  users:  (p) => <Icon {...p}><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 13.6A5.5 5.5 0 0 1 20.5 18.5"/></Icon>,
+  chat:   (p) => <Icon {...p} d="M4 5h16v11H9l-4 3v-3H4z"/>,
+  book:   (p) => <Icon {...p} paths={['M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z','M5 17a3 3 0 0 1 3-3h11']} />,
+  scan:   (p) => <Icon {...p} paths={['M4 8V5a1 1 0 0 1 1-1h3','M20 8V5a1 1 0 0 0-1-1h-3','M4 16v3a1 1 0 0 0 1 1h3','M20 16v3a1 1 0 0 1-1 1h-3','M7 12h10']} />,
+  alert:  (p) => <Icon {...p} paths={['M12 3l9 16H3z','M12 10v4','M12 17v.5']} />,
+  check:  (p) => <Icon {...p} paths={['M5 12.5l4 4 10-10']} />,
+  checklist:(p)=> <Icon {...p} paths={['M9 6h11','M9 12h11','M9 18h11','M4 6l1 1 2-2','M4 12l1 1 2-2','M4 18l1 1 2-2']} />,
+  chart:  (p) => <Icon {...p} paths={['M4 20V4','M4 20h16','M8 16v-4','M12 16V8','M16 16v-7','M20 16v-2']} />,
+  bolt:   (p) => <Icon {...p} d="M13 3L5 13h5l-1 8 8-11h-5z" />,
+  gear:   (p) => <Icon {...p}><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6M18.7 18.7l-1.6-1.6M6.9 6.9L5.3 5.3"/></Icon>,
+  search: (p) => <Icon {...p}><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></Icon>,
+  bell:   (p) => <Icon {...p} paths={['M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6','M10 20a2 2 0 0 0 4 0']} />,
+  sun:    (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></Icon>,
+  moon:   (p) => <Icon {...p} d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
+  arrow:  (p) => <Icon {...p} paths={['M5 12h14','M13 6l6 6-6 6']} />,
+  up:     (p) => <Icon {...p} paths={['M6 14l6-6 6 6']} />,
+  down:   (p) => <Icon {...p} paths={['M6 10l6 6 6-6']} />,
+  pin:    (p) => <Icon {...p}><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></Icon>,
+  phone:  (p) => <Icon {...p} d="M5 4h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z" />,
+  clock:  (p) => <Icon {...p}><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></Icon>,
+  dot:    (p) => <Icon {...p} fill="currentColor"><circle cx="12" cy="12" r="3.5" stroke="none"/></Icon>,
+  close:  (p) => <Icon {...p} paths={['M6 6l12 12','M18 6L6 18']} />,
+  plus:   (p) => <Icon {...p} paths={['M12 5v14','M5 12h14']} />,
+  filter: (p) => <Icon {...p} d="M4 5h16l-6 7v6l-4 2v-8z" />,
+  doc:    (p) => <Icon {...p} paths={['M6 3h8l4 4v14H6z','M14 3v4h4','M9 12h6','M9 16h6']} />,
+  video:  (p) => <Icon {...p}><rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></Icon>,
+  image:  (p) => <Icon {...p}><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-7 7"/></Icon>,
+  send:   (p) => <Icon {...p} paths={['M4 12L20 4l-6 16-3-7z','M11 13l9-9']} />,
+  camera: (p) => <Icon {...p}><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.4"/></Icon>,
+  calendar:(p)=> <Icon {...p}><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></Icon>,
+  flag:   (p) => <Icon {...p} paths={['M6 21V4','M6 5h11l-2 3 2 3H6']} />,
+  trend:  (p) => <Icon {...p} paths={['M3 16l5-5 4 3 8-9','M16 5h5v5']} />,
+  shield: (p) => <Icon {...p} paths={['M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z','M9 12l2 2 4-4']} />,
+  logo:   (p) => <Icon {...p} sw={1.7}><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 16V9l4 4 4-4v7"/></Icon>,
+  mic:    (p) => <Icon {...p}><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></Icon>,
+  award:  (p) => <Icon {...p}><circle cx="12" cy="9" r="5"/><path d="M9 13.4L8 21l4-2 4 2-1-7.6"/></Icon>,
+  replay: (p) => <Icon {...p} paths={['M4 12a8 8 0 1 0 2.4-5.7','M3.2 3.6v3.4h3.4']} />,
+  brain:  (p) => <Icon {...p}><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-1 5 3 3 0 0 0 1 5 3 3 0 0 0 3 3 2 2 0 0 0 3 0V4a2 2 0 0 0-3 0z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 1 5 3 3 0 0 1-1 5 3 3 0 0 1-3 3"/></Icon>,
+};
+window.I = I;
+window.Icon = Icon;
+</script>
+
+<!-- ════════════ SHARED UI + CHARTS (desktop/ui.jsx, inlined) ════════════ -->
+<script type="text/babel">
+/* AI MIDDLE MANAGER — shared UI + charts */
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ---------- Sparkline ---------- */
+function Sparkline({ data, w = 72, h = 24, invert = false }) {
+  const min = Math.min(...data), max = Math.max(...data);
+  const nx = (i) => (i / (data.length - 1)) * w;
+  const ny = (v) => h - ((v - min) / (max - min || 1)) * (h - 3) - 1.5;
+  const dpath = data.map((v, i) => `${i ? 'L' : 'M'}${nx(i).toFixed(1)} ${ny(v).toFixed(1)}`).join(' ');
+  const last = data[data.length - 1];
+  const good = invert ? last <= data[0] : last >= data[0];
+  const col = good ? 'var(--good)' : 'var(--crit)';
+  return (
+    <svg width={w} height={h} style={{ display: 'block', overflow: 'visible' }}>
+      <path d={`${dpath} L${w} ${h} L0 ${h} Z`} fill={col} opacity="0.08" />
+      <path d={dpath} fill="none" stroke={col} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={nx(data.length - 1)} cy={ny(last)} r="2.2" fill={col} />
+    </svg>
+  );
+}
+
+/* ---------- Delta pill ---------- */
+function Delta({ value, dir, invert }) {
+  const positive = invert ? dir === 'down' : dir === 'up';
+  const col = positive ? 'var(--good)' : 'var(--crit)';
+  const Arrow = dir === 'up' ? I.up : I.down;
+  return (
+    <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 11.5, color: col, fontWeight: 500 }}>
+      <Arrow size={12} sw={2.2} /> {value}
+    </span>
+  );
+}
+
+/* ---------- Ring gauge ---------- */
+function Ring({ value, size = 132, stroke = 9, label, sub, color = 'var(--accent)' }) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const off = c - (value / 100) * c;
+  const acc = color === 'var(--accent)'
+    ? (value >= 90 ? 'var(--good)' : value >= 75 ? 'var(--warn)' : 'var(--crit)') : color;
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--active)" strokeWidth={stroke} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={acc} strokeWidth={stroke}
+          strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 1s var(--ease)' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center' }}>
+        <div className="mono tnum" style={{ fontSize: size * .26, fontWeight: 600, letterSpacing: '-.02em' }}>{value}</div>
+        {label && <div className="eyebrow" style={{ marginTop: 2 }}>{label}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Multi-line chart ---------- */
+function LineChart({ series, labels, h = 200, yMax = 100, yMin = 0, fmt = (v)=>v }) {
+  const pad = { l: 30, r: 8, t: 12, b: 22 };
+  const ref = useRef(null);
+  const [w, setW] = useState(560);
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
+    ro.observe(ref.current); return () => ro.disconnect();
+  }, []);
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  const nx = (i) => pad.l + (i / (labels.length - 1)) * iw;
+  const ny = (v) => pad.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+  const ticks = 4;
+  return (
+    <div ref={ref} style={{ width: '100%' }}>
+      <svg width={w} height={h}>
+        {Array.from({ length: ticks + 1 }).map((_, i) => {
+          const v = yMin + (i / ticks) * (yMax - yMin);
+          const y = ny(v);
+          return (
+            <g key={i}>
+              <line x1={pad.l} x2={w - pad.r} y1={y} y2={y} stroke="var(--border)" strokeDasharray="2 4" />
+              <text x={pad.l - 7} y={y + 3} textAnchor="end" className="mono" fontSize="9.5" fill="var(--fg-3)">{fmt(Math.round(v))}</text>
+            </g>
+          );
+        })}
+        {labels.map((l, i) => (i % 2 === 0) && (
+          <text key={i} x={nx(i)} y={h - 6} textAnchor="middle" className="mono" fontSize="9.5" fill="var(--fg-3)">{l}</text>
+        ))}
+        {series.map((s, si) => {
+          const dp = s.data.map((v, i) => `${i ? 'L' : 'M'}${nx(i).toFixed(1)} ${ny(v).toFixed(1)}`).join(' ');
+          return (
+            <g key={si}>
+              {s.fill && <path d={`${dp} L${nx(s.data.length-1)} ${ny(yMin)} L${nx(0)} ${ny(yMin)} Z`} fill={s.color} opacity="0.07" />}
+              <path d={dp} fill="none" stroke={s.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx={nx(s.data.length - 1)} cy={ny(s.data[s.data.length - 1])} r="3" fill={s.color} />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/* ---------- Horizontal bars ---------- */
+function HBars({ rows, max = 100, fmt = (v) => v + '%' }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 46px', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 12.5, color: 'var(--fg-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</div>
+          <div className="meter" style={{ height: 8 }}>
+            <i style={{ width: `${(r.value / max) * 100}%`, background: r.color || 'var(--fg)' }} />
+          </div>
+          <div className="mono tnum" style={{ fontSize: 12, textAlign: 'right', color: 'var(--fg)' }}>{fmt(r.value)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Vertical bar chart ---------- */
+function VBars({ data, labels, h = 150, color = 'var(--fg)', fmt = (v)=>v }) {
+  const max = Math.max(...data) * 1.15;
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: h }}>
+      {data.map((v, i) => (
+        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
+          <div style={{ width: '100%', height: `${(v / max) * 100}%`, background: color, borderRadius: '4px 4px 2px 2px', minHeight: 3, opacity: i === data.length-1 ? 1 : .42, transition: 'height .6s var(--ease)' }} />
+          <div className="mono" style={{ fontSize: 9, color: 'var(--fg-3)' }}>{labels[i]}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Section header ---------- */
+function SectionTitle({ eyebrow, title, children }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
+      <div>
+        {eyebrow && <div className="eyebrow" style={{ marginBottom: 6 }}>{eyebrow}</div>}
+        <h2 style={{ fontSize: 19 }}>{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Avatar ---------- */
+function Av({ initials, size = 34, online }) {
+  return (
+    <span className={'avatar' + (online ? ' online' : '')} style={{ width: size, height: size, fontSize: size * .36 }}>
+      {initials}
+    </span>
+  );
+}
+
+/* ---------- Score badge by value ---------- */
+function scoreColor(v) { return v >= 90 ? 'var(--good)' : v >= 75 ? 'var(--warn)' : 'var(--crit)'; }
+
+Object.assign(window, { Sparkline, Delta, Ring, LineChart, HBars, VBars, SectionTitle, Av, scoreColor });
+</script>
+
+<!-- ════════════ iOS DEVICE FRAME (mobile/ios-frame.jsx, inlined) ════════════ -->
+<script type="text/babel">
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Exports (to window): IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+</script>
+
+<!-- ════════════ MANAGER APP (mobile/manager.jsx, inlined) ════════════ -->
+<script type="text/babel">
+/* AI MIDDLE MANAGER — Mobile MANAGER app (John Mercer) */
+const { useState, useEffect, useRef } = React;
+
+const MGR = { name: 'John Mercer', initials: 'JM', role: 'Regional Manager' };
+
+/* ---- shell (dark canvas inside bezel) ---- */
+function MScreen({ children, pad = true, style }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'var(--bg)', color: 'var(--fg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', ...style }}>
+      <div style={{ height: 54, flex: 'none' }} />
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: pad ? '0 18px' : 0, WebkitOverflowScrolling: 'touch' }}>{children}</div>
+    </div>
+  );
+}
+
+function MAppBar({ title, right }) {
+  return (
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 54, paddingTop: 4, zIndex: 25, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'color-mix(in oklab, var(--bg) 82%, transparent)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-.01em' }}>{title}</span>
+      {right && <div style={{ position: 'absolute', right: 14, top: 13 }}>{right}</div>}
+    </div>
+  );
+}
+
+function MTabBar({ tab, setTab }) {
+  const tabs = [
+    { id: 'home', icon: 'grid', label: 'Overview' },
+    { id: 'alerts', icon: 'alert', label: 'Alerts', badge: 4 },
+    { id: 'ask', icon: 'spark', label: '', big: true },
+    { id: 'sites', icon: 'pin', label: 'Sites' },
+    { id: 'team', icon: 'users', label: 'Team' },
+  ];
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 86, zIndex: 30,
+      background: 'linear-gradient(to top, var(--bg) 60%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 12px 22px' }}>
+      {tabs.map((t) => {
+        const Ico = I[t.icon];
+        const active = tab === t.id;
+        if (t.big) return (
+          <button key={t.id} onClick={() => setTab('ask')} style={{ width: 56, height: 56, borderRadius: 99, border: 'none', background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center', cursor: 'pointer', boxShadow: '0 8px 24px -6px rgba(0,0,0,.6)', marginTop: -18 }}>
+            <Ico size={22} />
+          </button>
+        );
+        return (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 8px', color: active ? 'var(--fg)' : 'var(--fg-4)', flex: 1, position: 'relative' }}>
+            <span style={{ position: 'relative' }}>
+              <Ico size={21} />
+              {t.badge && <span className="mono tnum" style={{ position: 'absolute', top: -6, right: -10, minWidth: 15, height: 15, padding: '0 4px', borderRadius: 99, background: 'var(--crit)', color: '#fff', fontSize: 9, display: 'grid', placeContent: 'center', boxShadow: '0 0 0 2px var(--bg)' }}>{t.badge}</span>}
+            </span>
+            <span className="mono" style={{ fontSize: 9, letterSpacing: '.02em' }}>{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* mini sparkline reused via window.Sparkline */
+
+/* ───────── OVERVIEW (home) ───────── */
+function HomeM({ setTab, openEsc, openVerify, openVCall }) {
+  const { briefing, stats, insights, locations, verification, verificationCalls } = window.AMM;
+  const tiles = stats.slice(0, 4);
+  const notReady = verificationCalls.find((c) => c.readiness === 'not-ready');
+  return (
+    <MScreen>
+      <MAppBar title="Overview" right={<Av initials={MGR.initials} size={28} online />} />
+      <div style={{ paddingTop: 18, paddingBottom: 110 }}>
+        <div style={{ marginBottom: 16 }}>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Tue 3 Jun · 7 locations · 26 staff</div>
+          <h2 style={{ fontSize: 25, marginTop: 6, letterSpacing: '-.02em' }}>Morning, John.</h2>
+        </div>
+
+        {/* AI briefing */}
+        <div className="card" style={{ padding: 16, marginBottom: 16, position: 'relative', overflow: 'hidden' }}>
+          <div className="grid-bg" style={{ position: 'absolute', inset: 0, opacity: .5, maskImage: 'radial-gradient(120% 100% at 100% 0%, black, transparent 70%)' }} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.spark size={13} /></div>
+              <span className="eyebrow" style={{ fontSize: 10 }}>AI Operations Briefing</span>
+              <span className="chip good" style={{ height: 18, fontSize: 9.5, marginLeft: 'auto' }}><span className="dot" />Live</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: 'var(--fg-2)', textWrap: 'pretty' }}>
+              Operations across all 7 locations are running smoothly. <b style={{ color: 'var(--fg)' }}>42 tasks</b> completed today, 5 need review. 1 critical maintenance issue at Granville needs escalation.
+            </p>
+          </div>
+        </div>
+
+        {/* live ops tiles */}
+        <span className="eyebrow" style={{ fontSize: 10 }}>Live operations</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 11, marginBottom: 20 }}>
+          {tiles.map((s) => (
+            <div key={s.id} className="card" style={{ padding: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span className="eyebrow" style={{ fontSize: 8.5 }}>{s.label}</span>
+                <Delta value={s.delta} dir={s.dir} invert={s.invert} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <span className="mono tnum" style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-.02em' }}>{s.value}</span>
+                <Sparkline data={s.spark} w={52} h={20} invert={s.invert} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* what needs you */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+          <span className="eyebrow" style={{ fontSize: 10 }}>What needs you</span>
+          <button onClick={() => setTab('alerts')} className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', background: 'none', border: 'none' }}>All</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          {insights.slice(0, 3).map((ins, i) => {
+            const map = { crit: { c: 'var(--crit)', ic: 'alert' }, warn: { c: 'var(--warn)', ic: 'trend' }, good: { c: 'var(--good)', ic: 'check' } };
+            const m = map[ins.sev]; const Ico = I[m.ic];
+            return (
+              <button key={i} onClick={() => ins.sev !== 'good' ? setTab('alerts') : null} className="card" style={{ padding: 13, display: 'flex', gap: 11, textAlign: 'left', width: '100%', cursor: 'pointer', background: 'var(--surface)', alignItems: 'flex-start' }}>
+                <span style={{ width: 26, height: 26, flex: 'none', borderRadius: 8, display: 'grid', placeContent: 'center', background: `color-mix(in oklab, ${m.c} 14%, transparent)`, color: m.c }}><Ico size={14} /></span>
+                <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.45, color: 'var(--fg-2)', flex: 1, textWrap: 'pretty' }}>{ins.text}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* knowledge verification */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+          <span className="eyebrow" style={{ fontSize: 10 }}>Knowledge verification</span>
+          <button onClick={openVerify} className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', background: 'none', border: 'none' }}>All</button>
+        </div>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 24, height: 24, flex: 'none', borderRadius: 7, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.mic size={13} /></div>
+            <span style={{ fontSize: 12.5, fontWeight: 540, flex: 1 }}>AI verbal checks</span>
+            <span className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>{verification.callsToday} today</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
+            {[['Ready rate', verification.readyRate + '%', 'var(--good)'], ['Avg conf.', verification.avgConfidence + '%', 'var(--fg)'], ['Retrain', verification.notReady, 'var(--crit)']].map(([l, v, c], i) => (
+              <div key={l} style={{ padding: '12px 12px', borderRight: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                <div className="mono tnum" style={{ fontSize: 18, fontWeight: 600, color: c }}>{v}</div>
+                <div className="eyebrow" style={{ fontSize: 8, marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {notReady && (
+            <button onClick={() => openVCall(notReady)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 14px', borderTop: '1px solid var(--border)', background: 'var(--crit-soft)', border: 'none', borderRadius: 0, cursor: 'pointer', font: 'inherit' }}>
+              <Av initials={notReady.initials} size={26} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 500 }}><b>{notReady.emp}</b> not ready</div>
+                <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-3)' }}>{notReady.sop} · retraining alerted</div>
+              </div>
+              <span className="mono tnum" style={{ fontSize: 12, fontWeight: 600, color: 'var(--crit)' }}>{notReady.knowledge}</span>
+              <I.arrow size={14} style={{ color: 'var(--crit)' }} />
+            </button>
+          )}
+        </div>
+
+        {/* location health quick */}
+        <span className="eyebrow" style={{ fontSize: 10 }}>Location health</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
+          {locations.slice(0, 4).map((l) => {
+            const health = Math.round((l.quality + l.compliance) / 2);
+            const hc = scoreColor(health);
+            return (
+              <button key={l.id} onClick={() => setTab('sites')} className="card" style={{ padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left', width: '100%', cursor: 'pointer', background: 'var(--surface)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: hc, flex: 'none' }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</span>
+                {l.issues > 0 && <span className="chip crit" style={{ height: 18, fontSize: 9.5 }}>{l.issues}</span>}
+                <span className="mono tnum" style={{ fontSize: 12, color: hc, fontWeight: 600 }}>{health}%</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+/* ───────── ALERTS (escalations) ───────── */
+const MSEV = { critical: { c: 'var(--crit)', s: 'P1' }, high: { c: 'var(--warn)', s: 'P2' }, med: { c: 'var(--info)', s: 'P3' } };
+function AlertsM({ openEsc }) {
+  const { escalations } = window.AMM;
+  const counts = { critical: escalations.filter(e=>e.sev==='critical').length, high: escalations.filter(e=>e.sev==='high').length, med: escalations.filter(e=>e.sev==='med').length };
+  return (
+    <MScreen>
+      <MAppBar title="Escalations" />
+      <div style={{ paddingTop: 16, paddingBottom: 110 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {Object.entries({ critical: 'Critical', high: 'High', med: 'Medium' }).map(([k, lbl]) => (
+            <div key={k} className="card" style={{ flex: 1, padding: '11px 8px', textAlign: 'center' }}>
+              <div className="mono tnum" style={{ fontSize: 20, fontWeight: 600, color: MSEV[k].c }}>{counts[k]}</div>
+              <div className="eyebrow" style={{ fontSize: 8.5, marginTop: 2 }}>{lbl}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {escalations.map((e) => {
+            const sv = MSEV[e.sev];
+            return (
+              <button key={e.id} onClick={() => openEsc(e)} className="card" style={{ padding: 14, textAlign: 'left', width: '100%', cursor: 'pointer', background: 'var(--surface)', borderLeft: `2px solid ${sv.c}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                  <span className="mono" style={{ fontSize: 10, color: sv.c, fontWeight: 600 }}>{sv.s}</span>
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{e.id}</span>
+                  <span style={{ flex: 1 }} />
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>{e.when}</span>
+                </div>
+                <div style={{ fontSize: 13.5, fontWeight: 540, lineHeight: 1.3, marginBottom: 6, textWrap: 'pretty' }}>{e.title}</div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{e.loc} · {e.owner}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+/* escalation detail (state phone + drill-in) */
+function EscDetailM({ e, onBack }) {
+  const sv = MSEV[e.sev];
+  return (
+    <MScreen>
+      <MAppBar title="Escalation" right={onBack ? <button onClick={onBack} className="mono" style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: 12 }}>Done</button> : null} />
+      <div style={{ paddingTop: 16, paddingBottom: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span className="chip" style={{ color: sv.c, borderColor: `color-mix(in oklab,${sv.c} 40%,transparent)`, background: `color-mix(in oklab,${sv.c} 14%,transparent)`, height: 22 }}><span className="dot" /> {sv.s} · {e.sev}</span>
+          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginLeft: 'auto' }}>{e.when}</span>
+        </div>
+        <h2 style={{ fontSize: 19, lineHeight: 1.25, letterSpacing: '-.01em', marginBottom: 8, textWrap: 'balance' }}>{e.title}</h2>
+        <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--fg-2)', marginBottom: 18 }}>
+          <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}><I.pin size={13} style={{ color: 'var(--fg-3)' }} />{e.loc}</span>
+          <span style={{ display: 'flex', gap: 5, alignItems: 'center' }}><I.users size={13} style={{ color: 'var(--fg-3)' }} />{e.owner}</span>
+        </div>
+
+        <div className="card" style={{ padding: 15, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
+            <div style={{ width: 20, height: 20, borderRadius: 6, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.spark size={12} /></div>
+            <span className="eyebrow" style={{ fontSize: 9.5 }}>AI summary</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: 'var(--fg)', textWrap: 'pretty' }}>{e.summary}</p>
+        </div>
+
+        <div className="card" style={{ padding: 15, marginBottom: 14, background: 'var(--surface-2)' }}>
+          <div className="eyebrow" style={{ fontSize: 9.5, marginBottom: 7 }}>Recommended action</div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--fg-2)' }}>{e.action}</p>
+        </div>
+
+        <div className="ph" style={{ height: 110, marginBottom: 16 }}><span>evidence · {e.evidence}</span></div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ flex: 1, height: 46, borderRadius: 12, border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer' }}><I.check size={16} sw={2.4} /> Approve</button>
+          <button style={{ width: 100, height: 46, borderRadius: 12, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--fg)', fontSize: 13.5, fontWeight: 500, cursor: 'pointer' }}>Reassign</button>
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+/* ───────── SITES (locations) ───────── */
+function SitesM() {
+  const { locations } = window.AMM;
+  return (
+    <MScreen>
+      <MAppBar title="Locations" />
+      <div style={{ paddingTop: 16, paddingBottom: 110 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+          {locations.map((l) => {
+            const health = Math.round((l.quality + l.compliance) / 2);
+            const hc = scoreColor(health);
+            return (
+              <div key={l.id} className="card" style={{ padding: 15 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 560, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 2 }}>{l.area}</div>
+                  </div>
+                  {l.issues > 0
+                    ? <span className="chip crit" style={{ height: 20 }}>{l.issues} issue{l.issues>1?'s':''}</span>
+                    : <span className="chip good" style={{ height: 20 }}><I.check size={11} sw={2.4} /></span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 99, background: hc }} />
+                  <span className="mono tnum" style={{ fontSize: 12, color: 'var(--fg-2)' }}>{health}% health</span>
+                  <span style={{ flex: 1 }} />
+                  <Delta value={Math.abs(l.trend) + '%'} dir={l.trend >= 0 ? 'up' : 'down'} />
+                </div>
+                <div className="meter" style={{ marginBottom: 11 }}><i style={{ width: `${health}%`, background: hc }} /></div>
+                <div style={{ display: 'flex', gap: 16, fontSize: 11, color: 'var(--fg-3)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><I.users size={12} /><b className="mono tnum" style={{ color: 'var(--fg-2)' }}>{l.staff}</b> on shift</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><I.checklist size={12} /><b className="mono tnum" style={{ color: 'var(--fg-2)' }}>{l.open}</b> open</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+/* ───────── TEAM (employees) ───────── */
+function TeamM() {
+  const emps = [...window.AMM.employees].sort((a, b) => b.score - a.score);
+  return (
+    <MScreen>
+      <MAppBar title="Team" />
+      <div style={{ paddingTop: 16, paddingBottom: 110 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {emps.map((e) => (
+            <div key={e.id} className="card" style={{ padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Av initials={e.initials} size={38} online={e.status === 'on-shift'} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.name}</div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{e.role}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div className="mono tnum" style={{ fontSize: 16, fontWeight: 600, color: scoreColor(e.score) }}>{e.score}</div>
+                <div className="eyebrow" style={{ fontSize: 8 }}>AI score</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+/* ───────── ASK AI ───────── */
+function AskM({ answered }) {
+  const suggestions = [
+    { icon: 'alert', text: 'What needs my attention right now?' },
+    { icon: 'pin', text: 'Why did Granville drop this week?' },
+    { icon: 'users', text: 'Who are my top & bottom performers?' },
+    { icon: 'scan', text: 'Show failed inspections today' },
+  ];
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'var(--bg)', color: 'var(--fg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <MAppBar title="AI Manager" />
+      <div style={{ flex: 1, overflowY: 'auto', padding: '70px 18px 18px', display: 'flex', flexDirection: 'column' }}>
+        {!answered ? (
+          <>
+            <div style={{ textAlign: 'center', margin: '20px 0 26px' }}>
+              <div className="amm-orb" style={{ width: 76, height: 76, borderRadius: 99, margin: '0 auto 16px', background: 'radial-gradient(circle at 38% 32%, var(--fg), color-mix(in oklab, var(--fg) 50%, var(--bg)))', boxShadow: '0 0 50px -8px color-mix(in oklab, var(--fg) 40%, transparent)' }} />
+              <div style={{ fontSize: 17, fontWeight: 600 }}>Ask your AI Manager</div>
+              <p style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 6, lineHeight: 1.5 }}>Monitoring 7 locations · 26 staff · always on</p>
+            </div>
+            <span className="eyebrow" style={{ fontSize: 10, marginBottom: 10 }}>Suggested</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {suggestions.map((s, i) => {
+                const Ico = I[s.icon];
+                return (
+                  <div key={i} className="card" style={{ padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer', background: 'var(--surface)' }}>
+                    <Ico size={16} style={{ color: 'var(--fg-3)', flex: 'none' }} />
+                    <span style={{ fontSize: 13, flex: 1 }}>{s.text}</span>
+                    <I.arrow size={14} style={{ color: 'var(--fg-4)' }} />
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* user q */}
+            <div style={{ alignSelf: 'flex-end', maxWidth: '82%', fontSize: 13.5, lineHeight: 1.45, padding: '10px 14px', borderRadius: '14px 4px 14px 14px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              What needs my attention right now?
+            </div>
+            {/* ai answer */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ width: 26, height: 26, flex: 'none', borderRadius: 8, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.spark size={14} /></div>
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'var(--fg)', textWrap: 'pretty' }}>
+                  <b>Granville is your priority.</b> Room inspections dropped 18%, 3 SOP violations logged, and there are 3 open escalations — including a <span style={{ color: 'var(--crit)' }}>critical HVAC failure</span> with a guest arriving at 15:00.
+                </p>
+                <div className="card" style={{ padding: 12, marginTop: 12, background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div className="eyebrow" style={{ fontSize: 9 }}>Recommended next steps</div>
+                  {['Approve HVAC backup dispatch', 'Reassign Room 12 re-clean to Jamal', 'Schedule coaching for Marcus'].map((t, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'center', fontSize: 12.5, color: 'var(--fg-2)' }}>
+                      <span style={{ width: 16, height: 16, borderRadius: 5, flex: 'none', background: 'var(--good-soft)', color: 'var(--good)', display: 'grid', placeContent: 'center' }}><I.check size={10} sw={2.6} /></span>
+                      {t}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button style={{ height: 36, padding: '0 14px', borderRadius: 9, border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Open Granville</button>
+                  <button style={{ height: 36, padding: '0 14px', borderRadius: 9, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--fg)', fontSize: 12.5, cursor: 'pointer' }}>Approve all</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* input bar */}
+      <div style={{ flex: 'none', padding: '10px 16px 30px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 44, padding: '0 6px 0 16px', borderRadius: 99, border: '1px solid var(--border-2)', background: 'var(--surface)' }}>
+          <span style={{ flex: 1, fontSize: 13.5, color: 'var(--fg-4)' }}>Ask anything…</span>
+          <button style={{ width: 32, height: 32, borderRadius: 99, border: 'none', background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center', cursor: 'pointer' }}><I.send size={15} /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────── KNOWLEDGE VERIFICATION (mobile manager) ───────── */
+const MREADY = {
+  ready:       { c: 'var(--good)', soft: 'var(--good-soft)', label: 'Ready to work independently', short: 'Ready' },
+  borderline:  { c: 'var(--warn)', soft: 'var(--warn-soft)', label: 'Borderline — re-check', short: 'Borderline' },
+  'not-ready': { c: 'var(--crit)', soft: 'var(--crit-soft)', label: 'Not ready — retraining', short: 'Not ready' },
+};
+const MVQUAL = { strong: { c: 'var(--good)', l: 'strong' }, partial: { c: 'var(--warn)', l: 'partial' }, weak: { c: 'var(--crit)', l: 'weak' } };
+
+function VCallRowM({ c, onClick }) {
+  const r = MREADY[c.readiness];
+  return (
+    <button onClick={onClick} className="card" style={{ padding: '12px 13px', display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left', width: '100%', cursor: 'pointer', background: 'var(--surface)', borderLeft: `2px solid ${r.c}` }}>
+      <Av initials={c.initials} size={34} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.emp}</span>
+          <span style={{ flex: 1 }} />
+          <span className="mono" style={{ fontSize: 9.5, color: 'var(--fg-3)' }}>{c.when}</span>
+        </div>
+        <div className="mono" style={{ fontSize: 10, color: 'var(--fg-3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.sop}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <span className="chip" style={{ height: 17, fontSize: 9, color: r.c, borderColor: `color-mix(in oklab,${r.c} 35%,transparent)` }}><span className="dot" />{r.short}</span>
+          <span className="mono tnum" style={{ fontSize: 10, color: 'var(--fg-3)' }}>K {c.knowledge} · C {c.confidence}</span>
+        </div>
+      </div>
+      <I.arrow size={15} style={{ color: 'var(--fg-4)', flex: 'none' }} />
+    </button>
+  );
+}
+
+function VerifyM({ onBack, onOpen }) {
+  const calls = window.AMM.verificationCalls;
+  const v = window.AMM.verification;
+  return (
+    <MScreen>
+      <MAppBar title="Verification Calls" right={onBack ? <button onClick={onBack} className="mono" style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: 12 }}>Done</button> : null} />
+      <div style={{ paddingTop: 16, paddingBottom: 110 }}>
+        <div className="card" style={{ padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14, background: 'var(--surface-2)' }}>
+          <div style={{ width: 26, height: 26, flex: 'none', borderRadius: 8, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.mic size={14} /></div>
+          <p style={{ margin: 0, fontSize: 12, lineHeight: 1.45, color: 'var(--fg-2)' }}>The AI calls each employee for a live verbal check before they work solo.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {[['Calls today', v.callsToday, 'var(--fg)'], ['Ready', v.readyRate + '%', 'var(--good)'], ['Retrain', v.notReady, 'var(--crit)']].map(([l, val, c]) => (
+            <div key={l} className="card" style={{ flex: 1, padding: '11px 8px', textAlign: 'center' }}>
+              <div className="mono tnum" style={{ fontSize: 19, fontWeight: 600, color: c }}>{val}</div>
+              <div className="eyebrow" style={{ fontSize: 8.5, marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {calls.map((c) => <VCallRowM key={c.id} c={c} onClick={() => onOpen(c)} />)}
+        </div>
+      </div>
+    </MScreen>
+  );
+}
+
+function VCallDetailM({ c, onBack }) {
+  const r = MREADY[c.readiness];
+  const turns = c.id === 'bianca' ? window.AMM.verificationScript.turns : null;
+  return (
+    <MScreen>
+      <MAppBar title="Verification call" right={onBack ? <button onClick={onBack} className="mono" style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: 12 }}>Done</button> : null} />
+      <div style={{ paddingTop: 14, paddingBottom: 30 }}>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+          <Av initials={c.initials} size={40} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 560 }}>{c.emp}</div>
+            <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{c.sop} · {c.dur}</div>
+          </div>
+          <span className="chip" style={{ height: 24, color: r.c, borderColor: `color-mix(in oklab,${r.c} 40%,transparent)`, background: `color-mix(in oklab,${r.c} 12%,transparent)` }}><span className="dot" />{r.short}</span>
+        </div>
+
+        {/* recording player */}
+        <div className="card" style={{ padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14, background: 'var(--surface-2)' }}>
+          <button style={{ width: 32, height: 32, flex: 'none', borderRadius: 99, border: 'none', background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center', cursor: 'pointer' }}><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></button>
+          <div style={{ flex: 1, display: 'flex', gap: 2, alignItems: 'center', height: 26 }}>
+            {Array.from({ length: 38 }).map((_, i) => <span key={i} style={{ flex: 1, minWidth: 1.5, borderRadius: 2, height: `${20 + Math.abs(Math.sin(i)) * 60}%`, background: i < 13 ? 'var(--fg)' : 'var(--border-strong)' }} />)}
+          </div>
+          <span className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>{c.dur}</span>
+        </div>
+
+        {/* scores */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
+          {[['Knowledge', c.knowledge + '%', scoreColor(c.knowledge)], ['Confidence', c.confidence + '%', scoreColor(c.confidence)], ['Readiness', r.short, r.c]].map(([l, val, col]) => (
+            <div key={l} className="card" style={{ padding: 12, textAlign: 'center' }}>
+              <div className="mono tnum" style={{ fontSize: l === 'Readiness' ? 12 : 18, fontWeight: 600, color: col, marginTop: l === 'Readiness' ? 4 : 0 }}>{val}</div>
+              <div className="eyebrow" style={{ fontSize: 8, marginTop: 4 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* AI assessment */}
+        <div className="card" style={{ padding: 14, marginBottom: 14, background: 'var(--surface-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+            <I.spark size={13} style={{ color: 'var(--fg-2)' }} />
+            <span className="eyebrow" style={{ fontSize: 9 }}>AI assessment</span>
+          </div>
+          <p style={{ margin: '0 0 10px', fontSize: 12.5, lineHeight: 1.5, color: 'var(--fg-2)', textWrap: 'pretty' }}>{c.summary}</p>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {c.flags.map((f, i) => <span key={i} className="chip" style={{ height: 22, fontSize: 10, color: (f.includes('alert') || f.includes('Failed') || f.includes('twice')) ? 'var(--crit)' : 'var(--fg-2)' }}>{f}</span>)}
+          </div>
+        </div>
+
+        {/* improvement */}
+        <div className="card" style={{ padding: 14, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+            <span className="eyebrow" style={{ fontSize: 9 }}>Improvement · knowledge</span>
+            <Delta value={Math.abs(c.trend[c.trend.length - 1] - c.trend[0]) + ' pts'} dir={c.trend[c.trend.length - 1] >= c.trend[0] ? 'up' : 'down'} />
+          </div>
+          <VBars data={c.trend} labels={['4w', '3w', '2w', 'now']} h={76} color={scoreColor(c.knowledge)} />
+        </div>
+
+        {/* transcript */}
+        {turns && (
+          <div style={{ marginBottom: 14 }}>
+            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 10 }}>Transcript · AI annotations</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {turns.map((t, i) => {
+                if (t.who === 'ai') return (
+                  <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--fg)' }}>
+                    {t.kind && t.kind !== 'verdict' && <span className="mono" style={{ display: 'block', fontSize: 8.5, color: (t.kind === 'coach' || t.kind === 'challenge') ? 'var(--warn)' : 'var(--good)', marginBottom: 3, letterSpacing: '.04em' }}>{t.kind === 'coach' ? '◆ COACHING' : t.kind === 'challenge' ? '◆ CHALLENGING' : '◆ ADVANCING'}</span>}
+                    <div style={{ padding: '8px 11px', borderRadius: '4px 12px 12px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>{t.t}</div>
+                  </div>
+                );
+                const ql = MVQUAL[t.quality] || MVQUAL.partial;
+                return (
+                  <div key={i} style={{ alignSelf: 'flex-end', maxWidth: '84%' }}>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.4, color: 'var(--bg)', background: 'var(--fg)', padding: '8px 11px', borderRadius: '12px 4px 12px 12px' }}>{t.t}</div>
+                    <div style={{ display: 'flex', gap: 7, justifyContent: 'flex-end', marginTop: 4 }}>
+                      {t.hesitation && <span className="mono" style={{ fontSize: 8.5, color: 'var(--warn)' }}>hesitation</span>}
+                      <span className="mono" style={{ fontSize: 8.5, color: ql.c }}>{ql.l}</span>
+                      <span className="mono tnum" style={{ fontSize: 8.5, color: 'var(--fg-3)' }}>{Math.round(t.confidence * 100)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* action */}
+        {c.readiness === 'ready'
+          ? <div className="chip good" style={{ height: 38, width: '100%', justifyContent: 'center', boxSizing: 'border-box' }}><I.check size={14} sw={2.4} /> Cleared to work independently{c.follow ? ` · ${c.follow}-day follow-up` : ''}</div>
+          : <div style={{ display: 'flex', gap: 8 }}>
+              <button style={{ flex: 1, height: 46, borderRadius: 12, border: 'none', background: 'var(--fg)', color: 'var(--bg)', fontSize: 13.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer' }}><I.send size={15} /> Send retraining</button>
+              <button style={{ width: 110, height: 46, borderRadius: 12, border: '1px solid var(--border-2)', background: 'var(--surface-2)', color: 'var(--fg)', fontSize: 13, cursor: 'pointer' }}>Re-call</button>
+            </div>}
+      </div>
+    </MScreen>
+  );
+}
+
+/* ───────── interactive manager phone ───────── */
+function ManagerApp() {
+  const [tab, setTab] = useState('home');
+  const [esc, setEsc] = useState(null);
+  const [vcall, setVcall] = useState(null);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  if (esc) return (
+    <div style={{ position: 'absolute', inset: 0 }}><EscDetailM e={esc} onBack={() => setEsc(null)} /></div>
+  );
+  if (vcall) return (
+    <div style={{ position: 'absolute', inset: 0 }}><VCallDetailM c={vcall} onBack={() => setVcall(null)} /></div>
+  );
+  if (verifyOpen) return (
+    <div style={{ position: 'absolute', inset: 0 }}><VerifyM onBack={() => setVerifyOpen(false)} onOpen={(c) => { setVerifyOpen(false); setVcall(c); }} /></div>
+  );
+  const screens = {
+    home: <HomeM setTab={setTab} openEsc={setEsc} openVerify={() => setVerifyOpen(true)} openVCall={setVcall} />,
+    alerts: <AlertsM openEsc={setEsc} />,
+    sites: <SitesM />,
+    team: <TeamM />,
+    ask: <AskM answered={false} />,
+  };
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      {screens[tab]}
+      <MTabBar tab={tab} setTab={setTab} />
+    </div>
+  );
+}
+
+Object.assign(window, { ManagerApp, EscDetailM, AskM, VerifyM, VCallDetailM });
+</script>
+
+<!-- ════════════ SHOWCASE ROOT ════════════ -->
+<script type="text/babel">
+  function Phone({ children, dark = true }) {
+    return (
+      <div style={{ width: 390, height: 844, flex: 'none' }}>
+        <IOSDevice dark={dark} width={390} height={844}>
+          <div style={{ position: 'absolute', inset: 0, top: 50 }}>{children}</div>
+        </IOSDevice>
+      </div>
+    );
+  }
+  function ThemeToggle({ theme, setTheme }) {
+    return (
+      <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--surface-2)', borderRadius: 9, border: '1px solid var(--border)' }}>
+        {[['dark', 'moon'], ['light', 'sun']].map(([k, ic]) => {
+          const Ico = I[ic]; const active = theme === k;
+          return (
+            <button key={k} onClick={() => setTheme(k)} className="btn btn-sm" style={{ height: 28, textTransform: 'capitalize', border: 'none', background: active ? 'var(--active)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)' }}><Ico size={14} /> {k}</button>
+          );
+        })}
+      </div>
+    );
+  }
+  function ScaledRow({ scale, children }) {
+    const ref = React.useRef(null);
+    const [mb, setMb] = React.useState(0);
+    React.useLayoutEffect(() => { if (ref.current) setMb(-(ref.current.offsetHeight * (1 - scale))); }, [scale]);
+    return <div ref={ref} className="phone-stage" style={{ transform: `scale(${scale})`, transformOrigin: 'top center', marginBottom: mb }}>{children}</div>;
+  }
+  function Caption({ k, title, sub }) {
+    return (
+      <div className="phone-cap" style={{ width: 390 }}>
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '.08em' }}>{k}</div>
+        <div style={{ fontSize: 14, fontWeight: 560, marginTop: 5 }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{sub}</div>
+      </div>
+    );
+  }
+  function ManagerShowcase() {
+    const [scale, setScale] = React.useState(1);
+    const [theme, setThemeState] = React.useState(() => localStorage.getItem('amm-mobile-theme') || 'dark');
+    const dark = theme === 'dark';
+    const setTheme = (t) => { setThemeState(t); localStorage.setItem('amm-mobile-theme', t); };
+    React.useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+    React.useEffect(() => {
+      function fit() {
+        const wScale = (window.innerWidth - 120) / (390 * 3 + 56 * 2);
+        setScale(Math.max(0.5, Math.min(1, wScale)));
+      }
+      fit(); window.addEventListener('resize', fit); return () => window.removeEventListener('resize', fit);
+    }, []);
+    const crit = window.AMM.escalations[0];
+    const vReady = window.AMM.verificationCalls.find((c) => c.id === 'bianca');
+    const vNotReady = window.AMM.verificationCalls.find((c) => c.readiness === 'not-ready');
+    return (
+      <div style={{ minHeight: '100vh', padding: '48px 0 64px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ width: 'min(1180px, 92vw)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 40, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.logo size={18} /></div>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI MIDDLE MANAGER</span>
+            </div>
+            <h1 style={{ fontSize: 34, letterSpacing: '-.025em' }}>Command center in your pocket</h1>
+            <p style={{ fontSize: 15, color: 'var(--fg-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
+              Supervise every location from the floor. The AI briefs you, surfaces what needs attention, and lets you approve escalations or ask anything — without opening a laptop.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <a href="mobile.html" className="btn" style={{ textDecoration: 'none' }}><I.phone size={15} /> Employee app</a>
+            <a href="index.html" className="btn" style={{ textDecoration: 'none' }}><I.grid size={15} /> Desktop dashboard</a>
+          </div>
+        </div>
+
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><ManagerApp /></Phone>
+            <Caption k="01 · INTERACTIVE" title="Overview" sub="Tap the tab bar — Overview, Alerts, Sites, Team, Ask" />
+          </div>
+          <div>
+            <Phone dark={dark}><EscDetailM e={crit} /></Phone>
+            <Caption k="02 · ESCALATION" title="Approve on the go" sub="AI summary, evidence & a one-tap recommended action" />
+          </div>
+          <div>
+            <Phone dark={dark}><AskM answered={true} /></Phone>
+            <Caption k="03 · AI MANAGER" title="Ask anything" sub="Conversational answers with next-step actions" />
+          </div>
+        </ScaledRow>
+
+        {/* AI Knowledge Verification on mobile */}
+        <div className="row-head" style={{ margin: '60px auto 8px' }}>
+          <span className="chip" style={{ height: 24, color: 'var(--fg)', borderColor: 'var(--border-strong)' }}><I.mic size={12} /> New</span>
+          <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI KNOWLEDGE VERIFICATION CALLS</span>
+          <span className="ln" />
+        </div>
+        <div className="row-head" style={{ marginBottom: 34, display: 'block' }}>
+          <h2 style={{ fontSize: 24, letterSpacing: '-.02em' }}>Verify competency from your phone</h2>
+          <p style={{ fontSize: 14, color: 'var(--fg-2)', marginTop: 8, maxWidth: 620, lineHeight: 1.5 }}>
+            Review the AI's verbal verification calls anywhere — knowledge & confidence scores, annotated transcripts, SOP readiness, and who's been flagged for retraining.
+          </p>
+        </div>
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><VerifyM /></Phone>
+            <Caption k="04 · VERIFICATION" title="Every verbal check" sub="Ready rate, confidence & who needs retraining" />
+          </div>
+          <div>
+            <Phone dark={dark}><VCallDetailM c={vReady} /></Phone>
+            <Caption k="05 · CALL DETAIL" title="Scores & transcript" sub="Readiness, AI annotations & improvement" />
+          </div>
+          <div>
+            <Phone dark={dark}><VCallDetailM c={vNotReady} /></Phone>
+            <Caption k="06 · FLAGGED" title="Not ready → retrain" sub="One tap to send retraining or re-call" />
+          </div>
+        </ScaledRow>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<ManagerShowcase />);
+</script>
+<script>
+  (function () {
+    var t = setInterval(function () {
+      var r = document.getElementById('root');
+      if (r && r.children.length) { document.getElementById('boot').classList.add('hide'); clearInterval(t); }
+    }, 120);
+    setTimeout(function () { clearInterval(t); }, 12000);
+  })();
+</script>
+</body>
+</html>

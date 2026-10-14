@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aspley-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "H:/Downloads/design_handoff_aspley_motor_inn/aspley-motor-inn", "run", "dev", "--", "--port", "4331"],
+      "port": 4331,
+      "autoPort": false
+    },
+    {
+      "name": "static",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-m", "http.server", "8123"],
+      "port": 8123
+    },
+    {
+      "name": "manager",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "manager-app",
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "manager-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "cwd": "manager-app",
+      "port": 3000
+    },
+    {
+      "name": "employee-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "employee-app",
+      "port": 5174,
+      "autoPort": false
+    }
+  ]
+}

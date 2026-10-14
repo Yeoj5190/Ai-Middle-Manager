@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Middle Manager — Manager on Mobile</title>
+<link rel="stylesheet" href="shared/tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body { overflow-x: hidden; background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--fg) 5%, var(--bg)), var(--bg) 60%),
+    var(--bg); }
+  #boot { position: fixed; inset: 0; display: grid; place-content: center; background: var(--bg); z-index: 100; transition: opacity .4s; color: var(--fg-3); font-family: var(--font-mono); font-size: 13px; }
+  #boot.hide { opacity: 0; pointer-events: none; }
+  @keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  .amm-orb { animation: orbPulse 3.4s var(--ease) infinite; }
+  @media (prefers-reduced-motion: reduce) { .amm-orb { animation: none; } }
+  .phone-stage { display: flex; gap: 56px; align-items: flex-start; padding: 0 8px; }
+  .phone-cap { text-align: center; margin-top: 20px; }
+  .row-head { width: min(1180px, 92vw); margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .row-head .ln { flex: 1; height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#08080a"/><g stroke="#f4f4f6" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="34" y="30" width="32" height="40" rx="7"/><path d="M42 44l8 8 8-8v16"/></g></svg>
+</template>
+<div id="boot">Loading manager app…</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('amm-mobile-theme') || 'dark');</script>
+<script src="desktop/data.js"></script>
+<script type="text/babel" src="desktop/icons.jsx"></script>
+<script type="text/babel" src="desktop/ui.jsx"></script>
+<script type="text/babel" src="mobile/ios-frame.jsx"></script>
+<script type="text/babel" src="mobile/manager.jsx"></script>
+<script type="text/babel">
+  function Phone({ children, dark = true }) {
+    return (
+      <div style={{ width: 390, height: 844, flex: 'none' }}>
+        <IOSDevice dark={dark} width={390} height={844}>
+          <div style={{ position: 'absolute', inset: 0, top: 50 }}>{children}</div>
+        </IOSDevice>
+      </div>
+    );
+  }
+  function ThemeToggle({ theme, setTheme }) {
+    return (
+      <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--surface-2)', borderRadius: 9, border: '1px solid var(--border)' }}>
+        {[['dark', 'moon'], ['light', 'sun']].map(([k, ic]) => {
+          const Ico = I[ic]; const active = theme === k;
+          return (
+            <button key={k} onClick={() => setTheme(k)} className="btn btn-sm" style={{ height: 28, textTransform: 'capitalize', border: 'none', background: active ? 'var(--active)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)' }}><Ico size={14} /> {k}</button>
+          );
+        })}
+      </div>
+    );
+  }
+  function ScaledRow({ scale, children }) {
+    const ref = React.useRef(null);
+    const [mb, setMb] = React.useState(0);
+    React.useLayoutEffect(() => { if (ref.current) setMb(-(ref.current.offsetHeight * (1 - scale))); }, [scale]);
+    return <div ref={ref} className="phone-stage" style={{ transform: `scale(${scale})`, transformOrigin: 'top center', marginBottom: mb }}>{children}</div>;
+  }
+  function Caption({ k, title, sub }) {
+    return (
+      <div className="phone-cap" style={{ width: 390 }}>
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '.08em' }}>{k}</div>
+        <div style={{ fontSize: 14, fontWeight: 560, marginTop: 5 }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{sub}</div>
+      </div>
+    );
+  }
+  function ManagerShowcase() {
+    const [scale, setScale] = React.useState(1);
+    const [theme, setThemeState] = React.useState(() => localStorage.getItem('amm-mobile-theme') || 'dark');
+    const dark = theme === 'dark';
+    const setTheme = (t) => { setThemeState(t); localStorage.setItem('amm-mobile-theme', t); };
+    React.useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+    React.useEffect(() => {
+      function fit() {
+        const wScale = (window.innerWidth - 120) / (390 * 3 + 56 * 2);
+        setScale(Math.max(0.5, Math.min(1, wScale)));
+      }
+      fit(); window.addEventListener('resize', fit); return () => window.removeEventListener('resize', fit);
+    }, []);
+    const crit = window.AMM.escalations[0];
+    const vReady = window.AMM.verificationCalls.find((c) => c.id === 'bianca');
+    const vNotReady = window.AMM.verificationCalls.find((c) => c.readiness === 'not-ready');
+    return (
+      <div style={{ minHeight: '100vh', padding: '48px 0 64px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ width: 'min(1180px, 92vw)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 40, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.logo size={18} /></div>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI MIDDLE MANAGER</span>
+            </div>
+            <h1 style={{ fontSize: 34, letterSpacing: '-.025em' }}>Command center in your pocket</h1>
+            <p style={{ fontSize: 15, color: 'var(--fg-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>
+              Supervise every location from the floor. The AI briefs you, surfaces what needs attention, and lets you approve escalations or ask anything — without opening a laptop.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <a href="mobile.html" className="btn" style={{ textDecoration: 'none' }}><I.phone size={15} /> Employee app</a>
+            <a href="index.html" className="btn" style={{ textDecoration: 'none' }}><I.grid size={15} /> Desktop dashboard</a>
+          </div>
+        </div>
+
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><ManagerApp /></Phone>
+            <Caption k="01 · INTERACTIVE" title="Overview" sub="Tap the tab bar — Overview, Alerts, Sites, Team, Ask" />
+          </div>
+          <div>
+            <Phone dark={dark}><EscDetailM e={crit} /></Phone>
+            <Caption k="02 · ESCALATION" title="Approve on the go" sub="AI summary, evidence & a one-tap recommended action" />
+          </div>
+          <div>
+            <Phone dark={dark}><AskM answered={true} /></Phone>
+            <Caption k="03 · AI MANAGER" title="Ask anything" sub="Conversational answers with next-step actions" />
+          </div>
+        </ScaledRow>
+
+        {/* AI Knowledge Verification on mobile */}
+        <div className="row-head" style={{ margin: '60px auto 8px' }}>
+          <span className="chip" style={{ height: 24, color: 'var(--fg)', borderColor: 'var(--border-strong)' }}><I.mic size={12} /> New</span>
+          <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI KNOWLEDGE VERIFICATION CALLS</span>
+          <span className="ln" />
+        </div>
+        <div className="row-head" style={{ marginBottom: 34, display: 'block' }}>
+          <h2 style={{ fontSize: 24, letterSpacing: '-.02em' }}>Verify competency from your phone</h2>
+          <p style={{ fontSize: 14, color: 'var(--fg-2)', marginTop: 8, maxWidth: 620, lineHeight: 1.5 }}>
+            Review the AI's verbal verification calls anywhere — knowledge & confidence scores, annotated transcripts, SOP readiness, and who's been flagged for retraining.
+          </p>
+        </div>
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><VerifyM /></Phone>
+            <Caption k="04 · VERIFICATION" title="Every verbal check" sub="Ready rate, confidence & who needs retraining" />
+          </div>
+          <div>
+            <Phone dark={dark}><VCallDetailM c={vReady} /></Phone>
+            <Caption k="05 · CALL DETAIL" title="Scores & transcript" sub="Readiness, AI annotations & improvement" />
+          </div>
+          <div>
+            <Phone dark={dark}><VCallDetailM c={vNotReady} /></Phone>
+            <Caption k="06 · FLAGGED" title="Not ready → retrain" sub="One tap to send retraining or re-call" />
+          </div>
+        </ScaledRow>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<ManagerShowcase />);
+</script>
+<script>
+  (function () {
+    var t = setInterval(function () {
+      var r = document.getElementById('root');
+      if (r && r.children.length) { document.getElementById('boot').classList.add('hide'); clearInterval(t); }
+    }, 120);
+    setTimeout(function () { clearInterval(t); }, 12000);
+  })();
+</script>
+</body>
+</html>

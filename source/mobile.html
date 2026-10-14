@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Middle Manager — Mobile Employee App</title>
+<link rel="stylesheet" href="shared/tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body { overflow-x: hidden; background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--fg) 5%, var(--bg)), var(--bg) 60%),
+    var(--bg); }
+  #boot { position: fixed; inset: 0; display: grid; place-content: center; background: var(--bg); z-index: 100; transition: opacity .4s; color: var(--fg-3); font-family: var(--font-mono); font-size: 13px; }
+  #boot.hide { opacity: 0; pointer-events: none; }
+  /* call screen waveform + orb */
+  @keyframes ampBar { 0%,100% { transform: scaleY(.4); } 50% { transform: scaleY(1); } }
+  .amm-bar { animation: ampBar 1s var(--ease) infinite; transform-origin: center; }
+  @keyframes orbPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  .amm-orb { animation: orbPulse 3.4s var(--ease) infinite; }
+  @media (prefers-reduced-motion: reduce) { .amm-bar, .amm-orb { animation: none; } }
+  .phone-stage { display: flex; gap: 56px; align-items: flex-start; padding: 0 8px; }
+  .phone-cap { text-align: center; margin-top: 20px; }
+  .row-head { width: min(1180px, 92vw); margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .row-head .ln { flex: 1; height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="22" fill="#08080a"/><g stroke="#f4f4f6" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="34" y="30" width="32" height="40" rx="7"/><path d="M42 44l8 8 8-8v16"/></g></svg>
+</template>
+<div id="boot">Loading employee app…</div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('amm-mobile-theme') || 'dark');</script>
+<script src="desktop/data.js"></script>
+<script type="text/babel" src="desktop/icons.jsx"></script>
+<script type="text/babel" src="desktop/ui.jsx"></script>
+<script type="text/babel" src="mobile/ios-frame.jsx"></script>
+<script type="text/babel" src="mobile/screens.jsx"></script>
+<script type="text/babel" src="mobile/quiz.jsx"></script>
+<script type="text/babel" src="mobile/verify.jsx"></script>
+<script type="text/babel">
+  function Phone({ children, dark = true }) {
+    return (
+      <div style={{ width: 390, height: 844, flex: 'none' }}>
+        <IOSDevice dark={dark} width={390} height={844}>
+          <div style={{ position: 'absolute', inset: 0, top: 50 }}>{children}</div>
+        </IOSDevice>
+      </div>
+    );
+  }
+
+  function ThemeToggle({ theme, setTheme }) {
+    return (
+      <div style={{ display: 'flex', gap: 4, padding: 3, background: 'var(--surface-2)', borderRadius: 9, border: '1px solid var(--border)' }}>
+        {[['dark', 'moon'], ['light', 'sun']].map(([k, ic]) => {
+          const Ico = I[ic]; const active = theme === k;
+          return (
+            <button key={k} onClick={() => setTheme(k)} className="btn btn-sm" style={{ height: 28, textTransform: 'capitalize', border: 'none', background: active ? 'var(--active)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)' }}><Ico size={14} /> {k}</button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function ScaledRow({ scale, children }) {
+    const ref = React.useRef(null);
+    const [mb, setMb] = React.useState(0);
+    React.useLayoutEffect(() => {
+      if (ref.current) setMb(-(ref.current.offsetHeight * (1 - scale)));
+    }, [scale]);
+    return (
+      <div ref={ref} className="phone-stage" style={{ transform: `scale(${scale})`, transformOrigin: 'top center', marginBottom: mb }}>{children}</div>
+    );
+  }
+
+  function Caption({ k, title, sub }) {
+    return (
+      <div className="phone-cap" style={{ width: 390 }}>
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '.08em' }}>{k}</div>
+        <div style={{ fontSize: 14, fontWeight: 560, marginTop: 5 }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{sub}</div>
+      </div>
+    );
+  }
+
+  function MobileShowcase() {
+    const [scale, setScale] = React.useState(1);
+    const [theme, setThemeState] = React.useState(() => localStorage.getItem('amm-mobile-theme') || 'dark');
+    const dark = theme === 'dark';
+    const setTheme = (t) => { setThemeState(t); localStorage.setItem('amm-mobile-theme', t); };
+    React.useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+    React.useEffect(() => {
+      function fit() {
+        const avail = window.innerWidth - 120;
+        const natural = 390 * 3 + 56 * 2;
+        const wScale = avail / natural;
+        setScale(Math.max(0.5, Math.min(1, wScale)));
+      }
+      fit(); window.addEventListener('resize', fit); return () => window.removeEventListener('resize', fit);
+    }, []);
+    return (
+      <div style={{ minHeight: '100vh', padding: '48px 0 64px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* header */}
+        <div style={{ width: 'min(1180px, 92vw)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 40, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 14 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--fg)', color: 'var(--bg)', display: 'grid', placeContent: 'center' }}><I.logo size={18} /></div>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI MIDDLE MANAGER</span>
+            </div>
+            <h1 style={{ fontSize: 34, letterSpacing: '-.025em' }}>The frontline app</h1>
+            <p style={{ fontSize: 15, color: 'var(--fg-2)', marginTop: 10, maxWidth: 540, lineHeight: 1.5 }}>
+              Built for the floor, not the office. Workers call the AI Manager, submit photos for instant quality checks, and complete tasks — as simple as a rideshare driver app.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <a href="manager-mobile.html" className="btn" style={{ textDecoration: 'none' }}><I.grid size={15} /> Manager dashboard</a>
+          </div>
+        </div>
+
+        {/* phones */}
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><EmployeeApp /></Phone>
+            <Caption k="01 · INTERACTIVE" title="Today" sub="Tap the tab bar — Today, Tasks, Train, Me" />
+          </div>
+          <div>
+            <Phone dark={dark}><CallScreen setTab={() => {}} /></Phone>
+            <Caption k="02 · LIVE" title="Call the AI Manager" sub="Voice support with live transcript, 24/7" />
+          </div>
+          <div>
+            <Phone dark={dark}><PhotoScreen /></Phone>
+            <Caption k="03 · AI VISION" title="Photo quality check" sub="Submit a photo, get an instant AI inspection" />
+          </div>
+        </ScaledRow>
+
+        {/* AI Training Quiz section */}
+        <div className="row-head" style={{ margin: '64px auto 8px' }}>
+          <span className="chip good" style={{ height: 24 }}><span className="dot" /> New</span>
+          <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI TRAINING QUIZ</span>
+          <span className="ln" />
+        </div>
+        <div className="row-head" style={{ marginBottom: 36, display: 'block' }}>
+          <h2 style={{ fontSize: 24, letterSpacing: '-.02em' }}>The AI checks understanding before the task</h2>
+          <p style={{ fontSize: 14, color: 'var(--fg-2)', marginTop: 8, maxWidth: 620, lineHeight: 1.5 }}>
+            After every video or SOP, the AI quizzes the employee — “Before you continue, I’ll ask a few quick questions.” It grades instantly, explains each answer, and gives a pass or needs-review result.
+          </p>
+        </div>
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><QuizFlow initial={{ phase: 'q', idx: 0, responses: { 1: { val: 1, correct: true } } }} /></Phone>
+            <Caption k="04 · INTERACTIVE" title="Instant AI feedback" sub="Tap, type or speak — graded on the spot" />
+          </div>
+          <div>
+            <Phone dark={dark}><QuizVoice /></Phone>
+            <Caption k="05 · VOICE MODE" title="Answer hands-free" sub="The AI asks aloud; the worker just speaks" />
+          </div>
+          <div>
+            <Phone dark={dark}><QuizFlow initial={{ phase: 'result', responses: { 1: { val: 0, correct: false }, 2: { val: 2, correct: true }, 3: { val: 'Cleanest to dirtiest', correct: true }, 4: { val: 1, correct: true }, 5: { val: 1, correct: true } } }} /></Phone>
+            <Caption k="06 · RESULT" title="Pass or needs review" sub="Score, missed topics & AI recommendation" />
+          </div>
+        </ScaledRow>
+
+        {/* AI Knowledge Verification Call section */}
+        <div className="row-head" style={{ margin: '64px auto 8px' }}>
+          <span className="chip" style={{ height: 24, color: 'var(--fg)', borderColor: 'var(--border-strong)' }}><I.phone size={12} /> The differentiator</span>
+          <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', letterSpacing: '.04em' }}>AI KNOWLEDGE VERIFICATION CALL</span>
+          <span className="ln" />
+        </div>
+        <div className="row-head" style={{ marginBottom: 36, display: 'block' }}>
+          <h2 style={{ fontSize: 24, letterSpacing: '-.02em' }}>Then the AI Manager calls to verify it for real</h2>
+          <p style={{ fontSize: 14, color: 'var(--fg-2)', marginTop: 8, maxWidth: 640, lineHeight: 1.5 }}>
+            After the quiz, the AI Operations Manager phones the employee for a live verbal check — open questions, follow-ups, and live coaching. It reads confidence and hesitation, challenges weak answers, and only clears people who genuinely understand. Impossible to look up the answers.
+          </p>
+        </div>
+        <ScaledRow scale={scale}>
+          <div>
+            <Phone dark={dark}><VerificationCall /></Phone>
+            <Caption k="07 · LIVE CALL" title="Verbal competency check" sub="Plays live — reads confidence & answer quality" />
+          </div>
+          <div>
+            <Phone dark={dark}><VerificationCall frozen startIdx={6} /></Phone>
+            <Caption k="08 · ADAPTIVE" title="Challenges & coaches" sub="Weak answer → the AI slows down and coaches" />
+          </div>
+          <div>
+            <Phone dark={dark}><VerificationCall showVerdict /></Phone>
+            <Caption k="09 · VERDICT" title="SOP readiness" sub="Knowledge, confidence & ready-to-work call" />
+          </div>
+        </ScaledRow>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<MobileShowcase />);
+</script>
+<script>
+  (function () {
+    var t = setInterval(function () {
+      var r = document.getElementById('root');
+      if (r && r.children.length) { document.getElementById('boot').classList.add('hide'); clearInterval(t); }
+    }, 120);
+    setTimeout(function () { clearInterval(t); }, 12000);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# ── dependencies & build output ──
+node_modules/
+.next/
+dist/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+*.log
+*.zip
+
+# ── secrets (never commit real keys; .env.example templates are fine) ──
+.env
+.env.*
+!.env.example
+
+# ── local tool / deploy state ──
+.netlify/
+.vercel/
+.claude/settings.local.json
+.claude/skills/
+
+# ── os ──
+.DS_Store
+Thumbs.db
